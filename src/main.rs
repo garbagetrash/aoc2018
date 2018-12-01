@@ -1,9 +1,5 @@
 extern crate clap;
 
-use std::fs::File;
-use std::io::BufRead;
-use std::io::BufReader;
-
 use clap::{App, Arg};
 
 mod day01;
@@ -22,14 +18,7 @@ fn main() {
 
     match day {
         1 => {
-            let input: Vec<i64> = {
-                let f = File::open("inputs/01.txt").unwrap();
-                let f = BufReader::new(f);
-
-                f.lines()
-                    .map(|x| x.unwrap().parse::<i64>().unwrap())
-                    .collect()
-            };
+            let input = day01::day01::load_input();
             println!("Part 1 Solution: {}", day01::day01::part1(&input));
             println!("Part 2 Solution: {}", day01::day01::part2(&input));
         }
