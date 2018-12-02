@@ -9,27 +9,20 @@ pub mod day02 {
         f.lines().map(|x| x.unwrap()).collect()
     }
 
-    pub fn counter(input: &str) -> (u32, u32) {
-        let mut count2 = 0;
-        let mut count3 = 0;
+    pub fn counter(input: &str) -> (bool, bool) {
+        // HashMap with letter counts for input ID
         let mut lettermap = HashMap::new();
         for c in input.chars() {
-            if lettermap.contains_key(&c) {
-                if let Some(x) = lettermap.get_mut(&c) {
-                    *x += 1;
-                }
+            if let Some(x) = lettermap.get_mut(&c) {
+                *x += 1;
             } else {
                 lettermap.insert(c, 1);
             }
         }
-        for val in lettermap.values() {
-            if *val == 2 {
-                count2 = 1;
-            } else if *val == 3 {
-                count3 = 1;
-            }
-        }
 
+        // A count for each occurrance of exactly 2 or 3 identical letters
+        let count2 = lettermap.values().fold(false, |acc, x| acc || *x == 2);
+        let count3 = lettermap.values().fold(false, |acc, x| acc || *x == 3);
         (count2, count3)
     }
 
@@ -38,8 +31,12 @@ pub mod day02 {
         let mut count3sum = 0;
         for line in input {
             let (count2, count3) = counter(&line);
-            count2sum += count2;
-            count3sum += count3;
+            if count2 {
+                count2sum += 1;
+            }
+            if count3 {
+                count3sum += 1;
+            }
         }
         count2sum * count3sum
     }
@@ -78,31 +75,27 @@ pub mod day02 {
 
         #[test]
         fn part1examples() {
-            assert_eq!(counter("abcdef"), (0, 0));
-            assert_eq!(counter("bababc"), (1, 1));
-            assert_eq!(counter("abbcde"), (1, 0));
-            assert_eq!(counter("abcccd"), (0, 1));
-            assert_eq!(counter("aabcdd"), (1, 0));
-            assert_eq!(counter("abcdee"), (1, 0));
-            assert_eq!(counter("ababab"), (0, 1));
+            assert_eq!(counter("abcdef"), (false, false));
+            assert_eq!(counter("bababc"), (true, true));
+            assert_eq!(counter("abbcde"), (true, false));
+            assert_eq!(counter("abcccd"), (false, true));
+            assert_eq!(counter("aabcdd"), (true, false));
+            assert_eq!(counter("abcdee"), (true, false));
+            assert_eq!(counter("ababab"), (false, true));
             assert_eq!(part1(&load_input()), 7872);
         }
 
         #[test]
         fn part2examples() {
             let mut test = Vec::new();
-            test.push(String::from("abcde"));
-            test.push(String::from("fghij"));
-            test.push(String::from("klmno"));
-            test.push(String::from("pqrst"));
-            test.push(String::from("fguij"));
-            test.push(String::from("axcye"));
-            test.push(String::from("wvxyz"));
-            assert_eq!(part2(&test), String::from("fgij"));
-            assert_eq!(
-                part2(&load_input()),
-                String::from("tjxmoewpdkyaihvrndfluwbzc")
-            );
+            let literals = [
+                "abcde", "fghij", "klmno", "pqrst", "fguij", "axcye", "wvxyz",
+            ];
+            for lit in literals.iter() {
+                test.push(String::from(*lit));
+            }
+            assert_eq!(part2(&test), "fgij");
+            assert_eq!(part2(&load_input()), "tjxmoewpdkyaihvrndfluwbzc")
         }
     }
 }

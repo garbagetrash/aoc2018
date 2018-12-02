@@ -5,20 +5,14 @@ pub mod day01 {
     use std::io::BufReader;
 
     pub fn load_input() -> Vec<i64> {
-        let f = File::open("inputs/01.txt").unwrap();
-        let f = BufReader::new(f);
-
+        let f = BufReader::new(File::open("inputs/01.txt").unwrap());
         f.lines()
             .map(|x| x.unwrap().parse::<i64>().unwrap())
             .collect()
     }
 
     pub fn part1(input: &Vec<i64>) -> i64 {
-        let mut sum = 0 as i64;
-        for num in input {
-            sum += num;
-        }
-        sum
+        input.iter().fold(0, |acc, x| acc + x)
     }
 
     pub fn part2(input: &Vec<i64>) -> i64 {
@@ -29,8 +23,7 @@ pub mod day01 {
         loop {
             for num in input {
                 sum += num;
-                let not_done = set.insert(sum);
-                if !not_done {
+                if !set.insert(sum) {
                     return sum;
                 };
             }
