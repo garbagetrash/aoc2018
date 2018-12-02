@@ -5,18 +5,8 @@ pub mod day02 {
     use std::io::BufReader;
 
     pub fn load_input() -> Vec<String> {
-        let f = File::open("inputs/02.txt").unwrap();
-        let f = BufReader::new(f);
-
-        //f.lines()
-        //    .map(|x| x.unwrap().parse::<i64>().unwrap())
-        //    .collect()
-        let mut input = Vec::new();
-        for line in f.lines() {
-            let x = line.unwrap();
-            input.push(x);
-        }
-        input
+        let f = BufReader::new(File::open("inputs/02.txt").unwrap());
+        f.lines().map(|x| x.unwrap()).collect()
     }
 
     pub fn counter(input: &str) -> (u32, u32) {
@@ -32,20 +22,12 @@ pub mod day02 {
                 lettermap.insert(c, 1);
             }
         }
-        let mut count2_inc = false;
-        let mut count3_inc = false;
-        for (key, val) in lettermap.iter() {
+        for val in lettermap.values() {
             if *val == 2 {
-                count2_inc = true;
+                count2 = 1;
             } else if *val == 3 {
-                count3_inc = true;
+                count3 = 1;
             }
-        }
-        if count2_inc {
-            count2 += 1;
-        }
-        if count3_inc {
-            count3 += 1;
         }
 
         (count2, count3)
@@ -87,8 +69,7 @@ pub mod day02 {
                 }
             }
         }
-        println!("Should never get here");
-        String::new()
+        panic!("Should never get here!");
     }
 
     #[cfg(test)]
@@ -104,6 +85,7 @@ pub mod day02 {
             assert_eq!(counter("aabcdd"), (1, 0));
             assert_eq!(counter("abcdee"), (1, 0));
             assert_eq!(counter("ababab"), (0, 1));
+            assert_eq!(part1(&load_input()), 7872);
         }
 
         #[test]
@@ -117,6 +99,10 @@ pub mod day02 {
             test.push(String::from("axcye"));
             test.push(String::from("wvxyz"));
             assert_eq!(part2(&test), String::from("fgij"));
+            assert_eq!(
+                part2(&load_input()),
+                String::from("tjxmoewpdkyaihvrndfluwbzc")
+            );
         }
     }
 }
