@@ -32,7 +32,7 @@ fn main() {
         3 => {
             let input = day03::day03::load_input();
             println!("Part 1 Solution: {}", day03::day03::part1(&input));
-            println!("Part 2 Solution: {}", day03::day03::part2(&input));
+            println!("Part 2 Solution: {}", day03::day03::part2(&input).unwrap());
         }
         _ => println!("Day {} not yet implemented", day),
     }

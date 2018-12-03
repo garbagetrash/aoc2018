@@ -1,4 +1,5 @@
 pub mod day03 {
+    use std::collections::HashMap;
     use std::collections::HashSet;
     use std::fs::File;
     use std::io::BufRead;
@@ -25,11 +26,11 @@ pub mod day03 {
     }
 
     pub fn load_input() -> Vec<Rect> {
-        let mut f = BufReader::new(File::open("inputs/03.txt").unwrap());
+        let f = BufReader::new(File::open("inputs/03.txt").unwrap());
         let mut output = Vec::new();
         for line in f.lines() {
-            let mut line = line.unwrap().clone();
-            let mut line_split: Vec<&str> = line.split(' ').collect::<Vec<&str>>();
+            let line = line.unwrap().clone();
+            let line_split: Vec<&str> = line.split(' ').collect::<Vec<&str>>();
             let id = line_split[0].split('#').collect::<Vec<&str>>()[1]
                 .parse::<u32>()
                 .unwrap();
@@ -53,7 +54,29 @@ pub mod day03 {
         output
     }
 
-    pub fn intersection(r1: &Rect, r2: &Rect, mut set: HashSet<(u32, u32)>) -> HashSet<(u32, u32)> {
+    pub fn intersection(r1: &Rect, r2: &Rect) -> Option<Rect> {
+        let left = std::cmp::max(r1.space_left, r2.space_left);
+        let right = std::cmp::min(r1.space_left + r1.width, r2.space_left + r2.width);
+
+        if left >= right {
+            return None;
+        }
+
+        let top = std::cmp::max(r1.space_top, r2.space_top);
+        let bottom = std::cmp::min(r1.space_top + r1.height, r2.space_top + r2.height);
+
+        if bottom <= top {
+            return None;
+        }
+
+        Some(Rect::new(0, left, top, right - left, bottom - top))
+    }
+
+    pub fn set_intersection(
+        r1: &Rect,
+        r2: &Rect,
+        mut set: HashSet<(u32, u32)>,
+    ) -> HashSet<(u32, u32)> {
         let left = std::cmp::max(r1.space_left, r2.space_left);
         let right = std::cmp::min(r1.space_left + r1.width, r2.space_left + r2.width);
 
@@ -70,7 +93,6 @@ pub mod day03 {
 
         for w in left..right {
             for h in top..bottom {
-                println!("{}, {}", w, h);
                 set.insert((w, h));
             }
         }
@@ -81,17 +103,39 @@ pub mod day03 {
         let mut set: HashSet<_> = HashSet::new();
         for i in 0..input.len() {
             for j in (i + 1)..input.len() {
-                set = intersection(&input[i], &input[j], set);
+                set = set_intersection(&input[i], &input[j], set);
             }
         }
-        println!("{}", set.len() as u32);
-
         set.len() as u32
     }
 
-    pub fn part2(input: &Vec<Rect>) -> i32 {
-        println!("Not yet implemented!");
-        0
+    pub fn part2(input: &Vec<Rect>) -> Result<u32, &'static str> {
+        let mut claims = HashMap::new();
+        for claim in input {
+            claims.insert(claim.id, 0);
+        }
+        for r1 in input {
+            for r2 in input {
+                if r1.id == r2.id {
+                    continue;
+                }
+                if let Some(_) = intersection(&r1, &r2) {
+                    if let Some(x) = claims.get_mut(&r1.id) {
+                        *x += 1;
+                    }
+                    if let Some(x) = claims.get_mut(&r2.id) {
+                        *x += 1;
+                    }
+                }
+            }
+        }
+
+        for (id, val) in claims.iter() {
+            if *val == 0 {
+                return Ok(*id);
+            }
+        }
+        Err("Should never get here!")
     }
 
     #[cfg(test)]
@@ -100,39 +144,38 @@ pub mod day03 {
         use std::collections::HashSet;
 
         #[test]
-        fn test_intersection() {
+        fn test_set_intersection() {
             let mut set = HashSet::new();
-            set = intersection(&Rect::new(0, 0, 0, 5, 5), &Rect::new(1, 1, 1, 3, 3), set);
+            set = set_intersection(&Rect::new(0, 0, 0, 5, 5), &Rect::new(1, 1, 1, 3, 3), set);
             assert_eq!(set.len(), 9);
         }
 
         #[test]
-        fn test_intersection2() {
+        fn test_set_intersection2() {
             let mut set = HashSet::new();
-            set = intersection(&Rect::new(0, 3, 1, 2, 5), &Rect::new(1, 1, 1, 3, 3), set);
+            set = set_intersection(&Rect::new(0, 3, 1, 2, 5), &Rect::new(1, 1, 1, 3, 3), set);
             assert_eq!(set.len(), 3);
         }
 
         #[test]
-        fn test_intersection3() {
+        fn test_set_intersection3() {
             let mut set = HashSet::new();
-            set = intersection(&Rect::new(0, 3, 1, 2, 5), &Rect::new(1, 0, 0, 5, 5), set);
+            set = set_intersection(&Rect::new(0, 3, 1, 2, 5), &Rect::new(1, 0, 0, 5, 5), set);
             assert_eq!(set.len(), 8);
         }
 
         #[test]
-        fn test_intersection4() {
+        fn test_set_intersection4() {
             let mut set = HashSet::new();
-            set = intersection(&Rect::new(0, 3, 1, 2, 5), &Rect::new(1, 7, 0, 5, 5), set);
+            set = set_intersection(&Rect::new(0, 3, 1, 2, 5), &Rect::new(1, 7, 0, 5, 5), set);
             assert_eq!(set.len(), 0);
         }
 
         #[test]
-        fn test_intersection5() {
-            println!("Starting test 5");
-            let r1 = Rect::new(0, 1, 3, 4, 4);
-            let r2 = Rect::new(1, 3, 1, 4, 4);
-            let r3 = Rect::new(2, 5, 5, 2, 2);
+        fn test_part1_example() {
+            let r1 = Rect::new(1, 1, 3, 4, 4);
+            let r2 = Rect::new(2, 3, 1, 4, 4);
+            let r3 = Rect::new(3, 5, 5, 2, 2);
             let mut input = Vec::new();
             input.push(r1);
             input.push(r2);
@@ -141,13 +184,27 @@ pub mod day03 {
         }
 
         #[test]
-        fn part1examples() {
-            assert_eq!(0, 0);
+        fn test_part1() {
+            let input = load_input();
+            assert_eq!(part1(&input), 120419);
         }
 
         #[test]
-        fn part2examples() {
-            assert_eq!(0, 0);
+        fn test_part2_examples() {
+            let r1 = Rect::new(1, 1, 3, 4, 4);
+            let r2 = Rect::new(2, 3, 1, 4, 4);
+            let r3 = Rect::new(3, 5, 5, 2, 2);
+            let mut input = Vec::new();
+            input.push(r1);
+            input.push(r2);
+            input.push(r3);
+            assert_eq!(part2(&input), Ok(3));
+        }
+
+        #[test]
+        fn test_part2() {
+            let input = load_input();
+            assert_eq!(part2(&input), Ok(445));
         }
     }
 }
