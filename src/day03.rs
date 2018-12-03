@@ -31,23 +31,25 @@ pub mod day03 {
 
     pub fn intersection(r1: &Rect, r2: &Rect) -> HashSet<(u32, u32)> {
         let mut set = HashSet::new();
-        for w in r1.space_left..(r1.space_left + r1.width) {
-            if w > r2.space_left && w < (r2.space_left + r2.width) {
-                for h in r1.space_top..(r1.space_top + r1.height) {
-                    if h > r2.space_top && h < (r2.space_top + r2.height) {
-                        set.insert((w, h));
-                    }
-                }
+        let left = std::cmp::max(r1.space_left, r2.space_left);
+        let right = std::cmp::min(r1.space_left + r1.width, r2.space_left + r2.width);
+        let top = std::cmp::max(r1.space_top, r2.space_top);
+        let bottom = std::cmp::min(r1.space_top + r1.height, r2.space_top + r2.height);
+
+        for w in left..right {
+            for h in top..bottom {
+                println!("{}, {}", w, h);
+                set.insert((w, h));
             }
         }
-        set.clone()
+        set
     }
 
     pub fn part1(input: &Vec<Rect>) -> u32 {
         let mut set = HashSet::new();
-        for r1 in input {
-            for r2 in input {
-                let set: HashSet<_> = set.union(&intersection(r1, r2)).collect();
+        for i in 0..input.len() {
+            for j in i..input.len() {
+                let set: HashSet<_> = set.union(&intersection(&input[i], &input[j])).collect();
             }
         }
         println!("{}", set.len() as u32);
