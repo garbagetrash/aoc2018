@@ -5,6 +5,7 @@ use clap::{App, Arg};
 mod day01;
 mod day02;
 mod day03;
+mod day04;
 
 fn main() {
     let matches = App::new("AOC2018")
@@ -33,6 +34,11 @@ fn main() {
             let input = day03::day03::load_input();
             println!("Part 1 Solution: {}", day03::day03::part1(&input));
             println!("Part 2 Solution: {}", day03::day03::part2(&input).unwrap());
+        }
+        4 => {
+            let input = day04::day04::load_input("inputs/04.txt");
+            println!("Part 1 Solution: {}", day04::day04::part1(&input));
+            println!("Part 2 Solution: {}", day04::day04::part2(&input));
         }
         _ => println!("Day {} not yet implemented", day),
     }
