@@ -81,20 +81,8 @@ pub mod day05 {
         }
 
         #[test]
-        fn test_part1() {
-            let input = load_input("inputs/05.txt");
-            assert_eq!(part1(&input), 9116);
-        }
-
-        #[test]
         fn part2examples() {
             assert_eq!(part2("dabAcCaCBAcCcaDA"), 4);
-        }
-
-        #[test]
-        fn test_part2() {
-            let input = load_input("inputs/05.txt");
-            assert_eq!(part2(&input), 6890);
         }
     }
 }
