@@ -50,7 +50,7 @@ fn main() {
         6 => {
             let input = day06::day06::load_input("inputs/06.txt");
             println!("Part 1 Solution: {}", day06::day06::part1(&input));
-            println!("Part 2 Solution: {}", day06::day06::part2(&input));
+            println!("Part 2 Solution: {}", day06::day06::part2(&input, 10000));
         }
         _ => println!("Day {} not yet implemented", day),
     }

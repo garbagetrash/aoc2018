@@ -2,6 +2,7 @@ pub mod day06 {
     extern crate regex;
 
     use regex::Regex;
+    use std::collections::HashMap;
     use std::collections::HashSet;
     use std::fs::File;
     use std::io::Read;
@@ -21,122 +22,98 @@ pub mod day06 {
         for cap in re.captures_iter(in_str) {
             let x = &cap[1].parse::<i32>().unwrap();
             let y = &cap[2].parse::<i32>().unwrap();
-            println!("{}, {}", x, y);
             vec.push((*x, *y));
         }
         vec
     }
 
-    pub fn check_hull(point_vec: Vec<(i32, i32)>) -> Vec<(i32, i32)> {
-        let mut hull_points = HashSet::new();
-        for p1 in point_vec.iter() {
-            for p2 in point_vec.iter() {
-                if p1 != p2 {
-                    let mut m: f64 = 0.0;
-                    let mut is_hull = true;
-                    if p2.0 - p1.0 != 0 {
-                        m = (p2.1 as f64 - p1.1 as f64) / (p2.0 as f64 - p1.0 as f64);
-                        let b = p1.1 as f64 - p1.0 as f64 * m;
-                        let mut p_above = false;
-                        let mut p_below = false;
-                        for p3 in point_vec.iter() {
-                            if p_above && p_below {
-                                is_hull = false;
-                                break;
-                            }
-                            if p3 != p1 && p3 != p2 {
-                                if (p3.1 as f64) > m * p3.0 as f64 + b {
-                                    p_above = true;
-                                } else if (p3.1 as f64) < m * p3.0 as f64 + b {
-                                    p_below = true;
-                                }
-                            }
-                        }
-                        if p_above && p_below {
-                            is_hull = false;
-                        }
-                    } else {
-                        let mut p_above = false;
-                        let mut p_below = false;
-                        for p3 in point_vec.iter() {
-                            if p_above && p_below {
-                                is_hull = false;
-                                break;
-                            }
-                            if p3 != p1 && p3 != p2 {
-                                if p3.0 > p2.0 {
-                                    p_above = true;
-                                } else if p3.0 < p2.0 {
-                                    p_below = true;
-                                }
-                            }
-                        }
-                        if p_above && p_below {
-                            is_hull = false;
-                        }
-                    }
-                    if is_hull {
-                        hull_points.insert(p1);
-                        hull_points.insert(p2);
-                    }
-                }
-            }
-        }
-
-        let mut interior_points: Vec<(i32, i32)> = Vec::new();
-        for pt in point_vec.iter() {
-            if !hull_points.contains(pt) {
-                interior_points.push(*pt);
-            }
-        }
-        interior_points
+    pub fn man_dist(p1: (i32, i32), p2: (i32, i32)) -> u32 {
+        ((p1.0 - p2.0).abs() + (p1.1 - p2.1).abs()) as u32
     }
 
-    pub fn closest_point(pt: (i32, i32), pts: &Vec<(i32, i32)>) -> (i32, i32) {
-        let mut min_dist = std::i32::MAX;
+    pub fn closest_point(pt: &(i32, i32), pts: &Vec<(i32, i32)>) -> (i32, i32) {
+        let mut min_dist = std::u32::MAX;
         let mut min_p = (0, 0);
         for p in pts {
-            let mut dist = (pt.0 - p.0).abs();
-            dist += (pt.1 - p.1).abs();
-
+            let dist = man_dist(*p, *pt);
             if dist < min_dist {
                 min_dist = dist;
                 min_p = *p;
             }
         }
-        println!("min_p: {:?}, pt: {:?}", min_p, pt);
         min_p
     }
 
-    pub fn count_points(pt: (i32, i32), pts: &Vec<(i32, i32)>) -> usize {
-        let mut count = 0;
-        for x in 0..500 {
-            for y in 0..500 {
-                if closest_point((x, y), pts) == pt {
-                    count += 1;
+    pub fn make_map(pts: &Vec<(i32, i32)>) -> HashMap<(i32, i32), u32> {
+        // Returns hashmap with grid of points and value index of pt closest
+        let mut output = HashMap::new();
+        let r = 500;
+        for x in 0..r {
+            for y in 0..r {
+                let c = closest_point(&(x, y), pts);
+                let mut c_idx = 0;
+                for idx in 0..pts.len() {
+                    if c == pts[idx] {
+                        c_idx = idx;
+                        break;
+                    }
                 }
+                output.insert((x, y), c_idx as u32);
             }
         }
-        count
+        output
+    }
+
+    pub fn part2_map(pts: &Vec<(i32, i32)>) -> HashMap<(i32, i32), u32> {
+        let mut output = HashMap::new();
+        let r = 500;
+        for x in 0..r {
+            for y in 0..r {
+                let sum_dist: u32 = pts.iter().map(|xt| man_dist(*xt, (x, y))).sum();
+                output.insert((x, y), sum_dist);
+            }
+        }
+        output
     }
 
     pub fn part1(input: &str) -> usize {
-        let mut map = point_vec(input);
-        let pts = map.iter().map(|x| *x).collect();
-        println!("pts: {:?}", pts);
-        let interior_points = check_hull(map);
-        println!("Int. Points: {:?}", interior_points);
-        let mut cell_sizes = Vec::new();
-        for pt in interior_points {
-            println!("{:?}", pt);
-            cell_sizes.push(count_points(pt, &pts));
+        let pt_vec = point_vec(input);
+        let pts = pt_vec.iter().map(|x| *x).collect();
+
+        let map = make_map(&pts);
+        let mut c_idx = HashSet::new();
+        for x in 0..500 {
+            c_idx.insert(map.get(&(x, 0)).unwrap());
+            c_idx.insert(map.get(&(x, 499)).unwrap());
+            c_idx.insert(map.get(&(0, x)).unwrap());
+            c_idx.insert(map.get(&(499, x)).unwrap());
         }
-        println!("cell_sizes: {:?}", cell_sizes);
-        *cell_sizes.iter().max().unwrap()
+
+        let mut sizes = Vec::new();
+        for i in 0..pts.len() {
+            let mut cnt = 0;
+            if !c_idx.contains(&(i as u32)) {
+                for val in map.values() {
+                    if i == *val as usize {
+                        cnt += 1;
+                    }
+                }
+            }
+            sizes.push(cnt);
+        }
+        *sizes.iter().max().unwrap() as usize
     }
 
-    pub fn part2(input: &str) -> usize {
-        0
+    pub fn part2(input: &str, lim: u32) -> usize {
+        let pt_vec = point_vec(input);
+        let map = part2_map(&pt_vec);
+        let mut cnt = 0;
+        for val in map.values() {
+            if val < &lim {
+                cnt += 1;
+            }
+        }
+        cnt
     }
 
     #[cfg(test)]
@@ -156,18 +133,15 @@ pub mod day06 {
         }
 
         #[test]
-        fn test_part1() {
-            assert_eq!(0, 0);
-        }
-
-        #[test]
         fn part2examples() {
-            assert_eq!(0, 0);
-        }
-
-        #[test]
-        fn test_part2() {
-            assert_eq!(0, 0);
+            let mut input = String::new();
+            input.push_str("1, 1
+                1, 6
+                8, 3
+                3, 4
+                5, 5
+                8, 9");
+            assert_eq!(part2(&input, 32), 16);
         }
     }
 }
