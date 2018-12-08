@@ -123,24 +123,28 @@ pub mod day06 {
         #[test]
         fn part1examples() {
             let mut input = String::new();
-            input.push_str("1, 1
+            input.push_str(
+                "1, 1
                 1, 6
                 8, 3
                 3, 4
                 5, 5
-                8, 9");
+                8, 9",
+            );
             assert_eq!(part1(&input), 17);
         }
 
         #[test]
         fn part2examples() {
             let mut input = String::new();
-            input.push_str("1, 1
+            input.push_str(
+                "1, 1
                 1, 6
                 8, 3
                 3, 4
                 5, 5
-                8, 9");
+                8, 9",
+            );
             assert_eq!(part2(&input, 32), 16);
         }
     }

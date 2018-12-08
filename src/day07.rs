@@ -2,6 +2,8 @@ pub mod day07 {
     extern crate regex;
 
     use regex::Regex;
+
+    use std::cmp::Ordering;
     use std::collections::HashMap;
     use std::collections::HashSet;
     use std::fs::File;
@@ -34,10 +36,11 @@ pub mod day07 {
 
     pub fn parse_input(input: &str) -> HashMap<char, Step> {
         let mut graph: HashMap<char, Step> = HashMap::new();
-        let re = Regex::new(r"Step ([A-Z]) must be finished before step ([A-Z]) can begin.").unwrap();
+        let re =
+            Regex::new(r"Step ([A-Z]) must be finished before step ([A-Z]) can begin.").unwrap();
         for cap in re.captures_iter(input) {
-            let c1 = cap[1].chars().next().unwrap();
-            let c2 = cap[2].chars().next().unwrap();
+            let c1 = cap[1].as_bytes()[0] as char;
+            let c2 = cap[2].as_bytes()[0] as char;
             if !graph.contains_key(&c1) {
                 graph.insert(c1, Step::new(c1));
             }
@@ -79,40 +82,95 @@ pub mod day07 {
         output
     }
 
-    pub fn part2(input: &str, n_workers: u32, sec_offset: u32) -> u32 {
-        let mut map = parse_input(input);
-        let mut output = String::new();
+    #[derive(PartialEq, Eq, Debug)]
+    struct Job {
+        id: char,
+        time_remaining: u32,
+        depends_on: HashSet<char>,
+    }
 
-        let mut options: Vec<(char, u32)> = Vec::new();
+    impl Job {
+        pub fn new(id: char, time_remaining: u32, depends_on: HashSet<char>) -> Job {
+            Job {
+                id: id,
+                time_remaining: time_remaining,
+                depends_on: depends_on,
+            }
+        }
+
+        pub fn ready(&self, done_vec: &HashSet<char>) -> bool {
+            for dependency in &self.depends_on {
+                if !done_vec.contains(&dependency) {
+                    return false;
+                }
+            }
+            true
+        }
+    }
+
+    impl PartialOrd for Job {
+        fn partial_cmp(&self, other: &Job) -> Option<Ordering> {
+            Some(self.id.cmp(&other.id))
+        }
+    }
+
+    impl Ord for Job {
+        fn cmp(&self, other: &Job) -> Ordering {
+            self.id.cmp(&other.id)
+        }
+    }
+
+    pub fn part2(input: &str, n_workers: usize, sec_offset: u32) -> u32 {
+        let map = parse_input(input);
+        let mut order = HashMap::new();
+        for c in part1(input).chars() {
+            let job = Job::new(
+                c,
+                sec_offset + (c as u32) - 64,
+                map.get(&c).unwrap().parents.clone(),
+            );
+            order.insert(c, job);
+        }
+
+        let mut done = false;
+        let mut active_jobs = HashMap::new();
+        let mut complete_jobs = HashSet::new();
         let mut time = 0;
-        while map.len() > 0 {
-            // TODO: Don't want to rebuild options every second...
-            for (k, v) in map.iter() {
-                if v.parents.len() == 0 {
-                    options.push((*k, sec_offset + (*k as u32) - 64));
+        while !done {
+            // If work is available, distribute it
+            let mut options: Vec<Job> = Vec::new();
+            if active_jobs.len() < n_workers {
+                for (id, v) in order.iter() {
+                    if v.ready(&complete_jobs) {
+                        options.push(Job::new(*id, v.time_remaining, v.depends_on.clone()));
+                    }
                 }
-            }
-            ////////////////////////////////////////////////////
-            options.sort();
-            for o in &options {
-                println!("{:?}", *o);
-            }
-            if options.len() > n_workers as usize {
-                options = options[..n_workers as usize].to_vec();
-            }
-            println!("Set ({}):", time);
-            for o in &options {
-                println!("{:?}", *o);
+                if options.len() > 0 {
+                    options.sort();
+                    let slots = n_workers - active_jobs.len();
+                    let work = options.len();
+                    for _ in 0..std::cmp::min(slots, work) {
+                        let c: &Job = &options.pop().unwrap();
+                        active_jobs.insert(c.id, (c.time_remaining, c.depends_on.clone()));
+                        order.remove(&c.id);
+                    }
+                }
             }
 
-            for idx in 0..options.len() {
-                options[idx].1 -= 1;
-                if options[idx].1 == 0 {
-                    let target = options.remove(idx);
-                    remove_step(&mut map, target.0);
+            // Simulate time step
+            time += 1;
+            for (id, job) in active_jobs.iter_mut() {
+                job.0 -= 1;
+                if job.0 == 0 {
+                    complete_jobs.insert(*id);
                 }
             }
-            time += 1;
+            active_jobs.retain(|_, v| v.0 > 0);
+
+            // Bail when done
+            if active_jobs.is_empty() && order.is_empty() {
+                done = true;
+            }
         }
         time
     }
@@ -124,26 +182,28 @@ pub mod day07 {
         #[test]
         fn part1examples() {
             let input = String::from(
-               "Step C must be finished before step A can begin.
+                "Step C must be finished before step A can begin.
                 Step C must be finished before step F can begin.
                 Step A must be finished before step B can begin.
                 Step A must be finished before step D can begin.
                 Step B must be finished before step E can begin.
                 Step D must be finished before step E can begin.
-                Step F must be finished before step E can begin.");
+                Step F must be finished before step E can begin.",
+            );
             assert_eq!(part1(&input), "CABDFE");
         }
 
         #[test]
         fn part2examples() {
             let input = String::from(
-               "Step C must be finished before step A can begin.
+                "Step C must be finished before step A can begin.
                 Step C must be finished before step F can begin.
                 Step A must be finished before step B can begin.
                 Step A must be finished before step D can begin.
                 Step B must be finished before step E can begin.
                 Step D must be finished before step E can begin.
-                Step F must be finished before step E can begin.");
+                Step F must be finished before step E can begin.",
+            );
             assert_eq!(part2(&input, 2, 0), 15);
         }
     }
