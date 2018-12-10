@@ -11,6 +11,7 @@ mod day06;
 mod day07;
 mod day08;
 mod day09;
+mod day10;
 
 fn main() {
     let matches = App::new("AOC2018")
@@ -69,6 +70,11 @@ fn main() {
             let input = day09::day09::load_input("inputs/09.txt");
             println!("Part 1 Solution: {}", day09::day09::part1(&input));
             println!("Part 2 Solution: {}", day09::day09::part2(&input));
+        }
+        10 => {
+            let input = day10::day10::load_input("inputs/10.txt");
+            println!("Part 1 Solution: {}", day10::day10::part1(&input));
+            println!("Part 2 Solution: {}", day10::day10::part2(&input));
         }
         _ => println!("Day {} not yet implemented", day),
     }

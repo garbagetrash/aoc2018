@@ -23,7 +23,6 @@ pub mod day09 {
         for cap in re.captures_iter(input) {
             n_players = cap[1].parse::<usize>().unwrap();
             n_marbles = cap[2].parse::<usize>().unwrap();
-            println!("Players: {:?}, marbles: {:?}", n_players, n_marbles);
         }
         let mut players: Vec<usize> = vec![0; n_players];
         let mut marbles: Vec<usize> = Vec::new();
@@ -54,10 +53,6 @@ pub mod day09 {
                     marbles.insert(idx, i);
                 }
             }
-            if i < 25 {
-                println!("{:?}", idx);
-                println!("{:?}", marbles);
-            }
         }
         *players.iter().max().unwrap()
     }
@@ -75,7 +70,6 @@ pub mod day09 {
         for cap in re.captures_iter(input) {
             n_players = cap[1].parse::<usize>().unwrap();
             n_marbles = 100 * cap[2].parse::<usize>().unwrap();
-            println!("Players: {:?}, marbles: {:?}", n_players, n_marbles);
         }
 
         let mut players: Vec<usize> = vec![0; n_players];
@@ -106,10 +100,6 @@ pub mod day09 {
                 }
                 hash_insert(idx, i, &mut marbles);
             }
-            if i < 25 {
-                println!("{:?}", idx);
-                println!("{:?}", marbles);
-            }
         }
         *players.iter().max().unwrap()
     }
@@ -128,12 +118,6 @@ pub mod day09 {
         fn part1examples2() {
             let input = String::from("13 players; last marble is worth 7999 points");
             assert_eq!(part1(&input), 146373);
-        }
-
-        #[test]
-        fn part1examples3() {
-            let input = String::from("17 players; last marble is worth 1104 points");
-            assert_eq!(part1(&input), 2764);
         }
 
         #[test]
