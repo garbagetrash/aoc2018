@@ -31,9 +31,6 @@ pub mod day09 {
 
         let mut idx = 1;
         for i in 2..n_marbles {
-            if i % 100 == 0 {
-                println!("{:?}", i);
-            }
             if i % 23 == 0 {
                 players[i % n_players] += i;
                 if idx < 7 {
@@ -79,9 +76,6 @@ pub mod day09 {
 
         let mut idx = 1;
         for i in 2..n_marbles {
-            if i % 100 == 0 {
-                println!("{:?}", i);
-            }
             if i % 23 == 0 {
                 players[i % n_players] += i;
                 if idx < 7 {
@@ -130,12 +124,6 @@ pub mod day09 {
         fn part1examples5() {
             let input = String::from("30 players; last marble is worth 5807 points");
             assert_eq!(part1(&input), 37305);
-        }
-
-        #[test]
-        fn part2examples() {
-            println!("Not yet implemented!");
-            assert_eq!(0, 0);
         }
     }
 }

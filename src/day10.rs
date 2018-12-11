@@ -1,9 +1,10 @@
 pub mod day10 {
+    extern crate ncurses;
     extern crate regex;
 
+    use ncurses::*;
     use regex::Regex;
     use std::fs::File;
-    use std::io::BufReader;
     use std::io::Read;
 
     pub fn load_input(filename: &str) -> String {
@@ -16,81 +17,91 @@ pub mod day10 {
     }
 
     pub fn parse_input(input: &str) -> (Vec<(i32, i32)>, Vec<(i32, i32)>) {
-        let re = Regex::new(r"^position=<\s*([\-\d]+),\s*([\-\d]+)> velocity=<\s*([\-\d]+),\s*([\-\d]+)>").unwrap();
+        let re = Regex::new(r"position=<\s*([\-\d]+),\s*([\-\d]+)> velocity=<\s*([\-\d]+),\s*([\-\d]+)>").unwrap();
         let mut pos = Vec::new();
         let mut vel = Vec::new();
         for cap in re.captures_iter(input) {
             let xpos = cap[1].parse::<i32>().unwrap();
             let ypos = cap[2].parse::<i32>().unwrap();
             pos.push((xpos, ypos));
-            println!("Positions: {:?}", pos);
             let xvel = cap[3].parse::<i32>().unwrap();
             let yvel = cap[4].parse::<i32>().unwrap();
             vel.push((xvel, yvel));
-            println!("Velocities: {:?}", vel);
         }
-        println!("Positions: {:?}", pos);
-        println!("Velocities: {:?}", vel);
         (pos, vel)
     }
 
-    pub fn print_board() {
+    pub fn print_board(pts: &Vec<(i32, i32)>, t: i32) {
 
+        let minx = pts.iter().map(|tup| tup.0).min().unwrap();
+        let miny = pts.iter().map(|tup| tup.1).min().unwrap();
+
+        initscr();
+        noecho();
+        let tmsg = format!("Time: {:?}", t);
+        mvprintw(0, 0, &tmsg);
+        curs_set(CURSOR_VISIBILITY::CURSOR_INVISIBLE);
+        for pt in pts {
+            mvprintw(pt.1 - miny + 1, pt.0 - minx, "#");
+        }
+        refresh();
+        getch();
+        clear();
+        mv(0, 0);
+        endwin();
+    }
+
+    pub fn prop_point(pt: (i32, i32), vel: (i32, i32), t: i32) -> (i32, i32) {
+        let x = pt.0 + t * vel.0;
+        let y = pt.1 + t * vel.1;
+        (x, y)
+    }
+
+    pub fn prop_points(pts: &Vec<(i32, i32)>, vels: &Vec<(i32, i32)>, t: i32) -> Vec<(i32, i32)> {
+        let mut output = Vec::new();
+        for (pt, vel) in pts.iter().zip(vels.iter()) {
+            output.push(prop_point(*pt, *vel, t));
+        }
+        output
+    }
+
+    pub fn max_x_dist(pts: &Vec<(i32, i32)>) -> i32 {
+        let mut max = std::i32::MIN;
+        let mut min = std::i32::MAX;
+        for pt in pts {
+            if pt.0 > max {
+                max = pt.0;
+            }
+            if pt.0 < min {
+                min = pt.0;
+            }
+        }
+        max - min
+    }
+
+    pub fn estimate_t(pts: &Vec<(i32, i32)>, vels: &Vec<(i32, i32)>) -> i32 {
+        let mut last_x_dist = max_x_dist(&pts);
+        let mut t = 1;
+        loop {
+            let new_x_dist = max_x_dist(&prop_points(&pts, &vels, t));
+            if new_x_dist > last_x_dist {
+                return t;
+            }
+            last_x_dist = new_x_dist;
+            t += 1;
+        }
     }
 
     pub fn part1(input: &str) -> String {
         let (pos, vel) = parse_input(input);
+
+        let t_est = estimate_t(&pos, &vel);
+
+        let t_trials: Vec<i32> = ((t_est - 5)..(t_est + 5)).collect();
+
+        for t in t_trials {
+            print_board(&prop_points(&pos, &vel, t), t);
+        }
         String::new()
-    }
-
-    pub fn part2(input: &str) -> usize {
-        0
-    }
-
-    #[cfg(test)]
-    mod test {
-        use super::*;
-
-        #[test]
-        fn part1examples1() {
-            let input = String::from("position=< 9,  1> velocity=< 0,  2>
-                                    position=< 7,  0> velocity=<-1,  0>
-                                    position=< 3, -2> velocity=<-1,  1>
-                                    position=< 6, 10> velocity=<-2, -1>
-                                    position=< 2, -4> velocity=< 2,  2>
-                                    position=<-6, 10> velocity=< 2, -2>
-                                    position=< 1,  8> velocity=< 1, -1>
-                                    position=< 1,  7> velocity=< 1,  0>
-                                    position=<-3, 11> velocity=< 1, -2>
-                                    position=< 7,  6> velocity=<-1, -1>
-                                    position=<-2,  3> velocity=< 1,  0>
-                                    position=<-4,  3> velocity=< 2,  0>
-                                    position=<10, -3> velocity=<-1,  1>
-                                    position=< 5, 11> velocity=< 1, -2>
-                                    position=< 4,  7> velocity=< 0, -1>
-                                    position=< 8, -2> velocity=< 0,  1>
-                                    position=<15,  0> velocity=<-2,  0>
-                                    position=< 1,  6> velocity=< 1,  0>
-                                    position=< 8,  9> velocity=< 0, -1>
-                                    position=< 3,  3> velocity=<-1,  1>
-                                    position=< 0,  5> velocity=< 0, -1>
-                                    position=<-2,  2> velocity=< 2,  0>
-                                    position=< 5, -2> velocity=< 1,  2>
-                                    position=< 1,  4> velocity=< 2,  1>
-                                    position=<-2,  7> velocity=< 2, -2>
-                                    position=< 3,  6> velocity=<-1, -1>
-                                    position=< 5,  0> velocity=< 1,  0>
-                                    position=<-6,  0> velocity=< 2,  0>
-                                    position=< 5,  9> velocity=< 1, -2>
-                                    position=<14,  7> velocity=<-2,  0>
-                                    position=<-3,  6> velocity=< 2, -1>");
-            assert_eq!(0, 0);
-        }
-
-        #[test]
-        fn part2examples() {
-            println!("Not yet implemented!");
-            assert_eq!(0, 0);
-        }
     }
 }
