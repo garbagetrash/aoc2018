@@ -3,11 +3,13 @@ pub mod day13 {
     extern crate regex;
 
     use ncurses::*;
+    use std::cmp::Ordering;
     use std::collections::HashMap;
     use std::fs::File;
     use std::io::Read;
     use std::{thread, time};
 
+    #[derive(Debug)]
     pub enum TrackType {
         Vertical,
         Horizontal,
@@ -22,12 +24,13 @@ pub mod day13 {
             .expect(&format!("No file {}", filename))
             .read_to_string(&mut buffer)
             .unwrap();
-        buffer.trim().to_string()
+        buffer.to_string()
     }
 
     #[derive(Debug)]
-    #[derive(PartialEq)]
     #[derive(Clone)]
+    #[derive(PartialEq)]
+    #[derive(Eq)]
     pub enum Direction {
         Left,
         Straight,
@@ -36,10 +39,28 @@ pub mod day13 {
 
     #[derive(Debug)]
     #[derive(Clone)]
+    #[derive(PartialEq)]
+    #[derive(Eq)]
     pub struct Cart {
         pos: (usize, usize),
         next_dir: Direction,
         orientation: char,
+    }
+
+    impl PartialOrd for Cart {
+        fn partial_cmp(&self, other: &Cart) -> Option<Ordering> {
+            let self_tup = (self.pos.1, self.pos.0);
+            let other_tup = (other.pos.1, other.pos.0);
+            Some(self_tup.cmp(&other_tup))
+        }
+    }
+
+    impl Ord for Cart {
+        fn cmp(&self, other: &Cart) -> Ordering {
+            let self_tup = (self.pos.1, self.pos.0);
+            let other_tup = (other.pos.1, other.pos.0);
+            self_tup.cmp(&other_tup)
+        }
     }
 
     impl Cart {
@@ -153,8 +174,6 @@ pub mod day13 {
 
     pub fn print_board(carts: &Vec<Cart>, track_map: &HashMap<(usize, usize), TrackType>, t: i32, sleep_time: u64) {
 
-        initscr();
-        noecho();
         let tmsg = format!("Tick: {:?}", t);
         mvprintw(0, 0, &tmsg);
         curs_set(CURSOR_VISIBILITY::CURSOR_INVISIBLE);
@@ -170,20 +189,24 @@ pub mod day13 {
             mvprintw((pos.1 + 2) as i32, pos.0 as i32, &track);
         }
         for cart in carts {
-            mvprintw((cart.pos.1 + 2) as i32, cart.pos.0 as i32, &(String::from_utf8_lossy(&[cart.orientation as u8])));
+            if cart.orientation != 'X' {
+                mvprintw((cart.pos.1 + 2) as i32, cart.pos.0 as i32, &(String::from_utf8_lossy(&[cart.orientation as u8])));
+            }
         }
         refresh();
         let sleep_time = time::Duration::from_millis(sleep_time);
         thread::sleep(sleep_time);
-        clear();
         mv(0, 0);
-        endwin();
     }
 
     // Set sleep_time to 0 to skip the animation
     pub fn part1(input: &str, sleep_time: u64) -> (usize, usize) {
         let (track_map, mut carts) = parse_input(input);
 
+        if sleep_time > 0 {
+            initscr();
+            noecho();
+        }
         let mut tick_num = 0;
         loop {
             if sleep_time > 0 {
@@ -196,6 +219,9 @@ pub mod day13 {
                 for j in 0..carts.len() {
                     if j != i {
                         if carts[j].pos == carts[i].pos {
+                            if sleep_time > 0 {
+                                endwin();
+                            }
                             return carts[i].pos;
                         }
                     }
@@ -207,33 +233,55 @@ pub mod day13 {
 
     pub fn part2(input: &str, sleep_time: u64) -> (usize, usize) {
         let (track_map, mut carts) = parse_input(input);
+
+        if sleep_time > 0 {
+            initscr();
+            noecho();
+        }
         let mut tick_num = 0;
         loop {
             if sleep_time > 0 {
                 print_board(&carts, &track_map, tick_num, sleep_time);
             }
+
+            // Iterate through carts
+            carts.sort();
             for i in 0..carts.len() {
-                carts[i].tick(&track_map);
+                if carts[i].orientation != 'X' {
+                    carts[i].tick(&track_map);
 
-                if carts.len() == 1 {
-                    return carts[0].pos;
-                }
-
-                // Collision detection
-                let mut remove_vec = Vec::new();
-                for j in 0..carts.len() {
-                    if j != i {
-                        if carts[j].pos == carts[i].pos {
-                            remove_vec.push(i);
-                            remove_vec.push(j);
+                    // Collision detection
+                    for j in 0..carts.len() {
+                        if carts[j].orientation != 'X' && j != i {
+                            if carts[j].pos == carts[i].pos {
+                                carts[j].orientation = 'X';
+                                carts[i].orientation = 'X';
+                            }
                         }
                     }
                 }
-                remove_vec.sort_by(|a, b| b.cmp(a));
-                for idx in remove_vec {
-                    carts.remove(idx);
+            }
+
+            // Count remaining carts
+            let mut active_cart_cnt = 0;
+            for cart in &carts {
+                if cart.orientation != 'X' {
+                    active_cart_cnt += 1;
                 }
             }
+
+            // If only 1 cart left, do a final tick and return
+            if active_cart_cnt == 1 {
+                for cart in &mut carts {
+                    if cart.orientation != 'X' {
+                        if sleep_time > 0 {
+                            endwin();
+                        }
+                        return cart.pos;
+                    }
+                }
+            }
+
             tick_num += 1;
         }
     }
@@ -257,7 +305,7 @@ pub mod day13 {
         #[test]
         fn test_part2() {
             let input = load_input("inputs/13example3.txt");
-            assert_eq!(part2(&input, 250), (6, 4));
+            assert_eq!(part2(&input, 0), (6, 4));
         }
     }
 }

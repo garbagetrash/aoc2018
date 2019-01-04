@@ -92,7 +92,7 @@ fn main() {
         13 => {
             let input = day13::day13::load_input("inputs/13.txt");
             println!("Part 1 Solution: {:?}", day13::day13::part1(&input, 0));
-            println!("Part 2 Solution: {:?}", day13::day13::part2(&input, 0));
+            println!("Part 2 Solution: {:?}", day13::day13::part2(&input, 50));
         }
         _ => println!("Day {} not yet implemented", day),
     }
