@@ -25,12 +25,14 @@ pub mod day13 {
         buffer.trim().to_string()
     }
 
+    #[derive(Debug)]
     pub enum Direction {
         Left,
         Straight,
         Right,
     }
 
+    #[derive(Debug)]
     pub struct Cart {
         pos: (usize, usize),
         last_dir: Direction,
@@ -50,6 +52,7 @@ pub mod day13 {
     }
 
     pub fn parse_input(input: &str) -> HashMap<(usize, usize), TrackType> {
+        let mut carts = Vec::new();
         let mut track_map: HashMap<(usize, usize), TrackType> = HashMap::new();
         for (row, l) in input.lines().enumerate() {
             for (col, c) in l.chars().enumerate() {
@@ -59,14 +62,28 @@ pub mod day13 {
                     '/' => track_map.insert((row, col), TrackType::ForwardSlash),
                     '\\' => track_map.insert((row, col), TrackType::BackSlash),
                     '+' => track_map.insert((row, col), TrackType::Intersection),
-                    '<' => carts.push(Cart::new((row, col), Direction::Left)),
-                    '^' => None,
-                    '>' => None,
-                    'v' => None,
+                    '<' => {
+                        carts.push(Cart::new((row, col), Direction::Left));
+                        track_map.insert((row, col), TrackType::Horizontal)
+                    },
+                    '^' => {
+                        carts.push(Cart::new((row, col), Direction::Left));
+                        track_map.insert((row, col), TrackType::Vertical)
+                    },
+                    '>' => {
+                        carts.push(Cart::new((row, col), Direction::Left));
+                        track_map.insert((row, col), TrackType::Horizontal)
+                    },
+                    'v' => {
+                        carts.push(Cart::new((row, col), Direction::Left));
+                        track_map.insert((row, col), TrackType::Vertical)
+                    },
                     _ => None,
                 };
             }
         }
+        println!("Carts:");
+        println!("{:?}", carts);
         track_map
     }
 
