@@ -17,7 +17,10 @@ pub mod day10 {
     }
 
     pub fn parse_input(input: &str) -> (Vec<(i32, i32)>, Vec<(i32, i32)>) {
-        let re = Regex::new(r"position=<\s*([\-\d]+),\s*([\-\d]+)> velocity=<\s*([\-\d]+),\s*([\-\d]+)>").unwrap();
+        let re = Regex::new(
+            r"position=<\s*([\-\d]+),\s*([\-\d]+)> velocity=<\s*([\-\d]+),\s*([\-\d]+)>",
+        )
+        .unwrap();
         let mut pos = Vec::new();
         let mut vel = Vec::new();
         for cap in re.captures_iter(input) {
@@ -32,7 +35,6 @@ pub mod day10 {
     }
 
     pub fn print_board(pts: &Vec<(i32, i32)>, t: i32) {
-
         let minx = pts.iter().map(|tup| tup.0).min().unwrap();
         let miny = pts.iter().map(|tup| tup.1).min().unwrap();
 

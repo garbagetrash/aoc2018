@@ -64,10 +64,13 @@ pub mod day11 {
         let mut nmax = 1;
         let n: Vec<usize> = (1..300).collect();
 
-        let tupvec = n.par_iter().map(|&n| {
-            let (m, xm, ym) = construct_nxn_grid(&grid, n);
-            (m, xm, ym, n)
-        }).collect::<Vec<(i32, usize, usize, usize)>>();
+        let tupvec = n
+            .par_iter()
+            .map(|&n| {
+                let (m, xm, ym) = construct_nxn_grid(&grid, n);
+                (m, xm, ym, n)
+            })
+            .collect::<Vec<(i32, usize, usize, usize)>>();
 
         for tup in tupvec {
             if tup.0 > max {

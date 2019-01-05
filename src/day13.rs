@@ -27,20 +27,14 @@ pub mod day13 {
         buffer.to_string()
     }
 
-    #[derive(Debug)]
-    #[derive(Clone)]
-    #[derive(PartialEq)]
-    #[derive(Eq)]
+    #[derive(Debug, Clone, PartialEq, Eq)]
     pub enum Direction {
         Left,
         Straight,
         Right,
     }
 
-    #[derive(Debug)]
-    #[derive(Clone)]
-    #[derive(PartialEq)]
-    #[derive(Eq)]
+    #[derive(Debug, Clone, PartialEq, Eq)]
     pub struct Cart {
         pos: (usize, usize),
         next_dir: Direction,
@@ -83,7 +77,10 @@ pub mod day13 {
             }
 
             // Turn
-            match track_map.get(&self.pos).expect(&format!("No track at {:?}", &self.pos)) {
+            match track_map
+                .get(&self.pos)
+                .expect(&format!("No track at {:?}", &self.pos))
+            {
                 TrackType::ForwardSlash => {
                     if self.orientation == '^' {
                         self.orientation = '>';
@@ -94,7 +91,7 @@ pub mod day13 {
                     } else if self.orientation == '<' {
                         self.orientation = 'v';
                     }
-                },
+                }
                 TrackType::BackSlash => {
                     if self.orientation == '^' {
                         self.orientation = '<';
@@ -105,7 +102,7 @@ pub mod day13 {
                     } else if self.orientation == '<' {
                         self.orientation = '^';
                     }
-                },
+                }
                 TrackType::Intersection => {
                     if self.next_dir == Direction::Left {
                         self.next_dir = Direction::Straight;
@@ -132,7 +129,7 @@ pub mod day13 {
                             self.orientation = '>';
                         }
                     }
-                },
+                }
                 _ => (),
             }
         }
@@ -152,19 +149,19 @@ pub mod day13 {
                     '<' => {
                         carts.push(Cart::new((col, row), Direction::Left, '<'));
                         track_map.insert((col, row), TrackType::Horizontal)
-                    },
+                    }
                     '^' => {
                         carts.push(Cart::new((col, row), Direction::Left, '^'));
                         track_map.insert((col, row), TrackType::Vertical)
-                    },
+                    }
                     '>' => {
                         carts.push(Cart::new((col, row), Direction::Left, '>'));
                         track_map.insert((col, row), TrackType::Horizontal)
-                    },
+                    }
                     'v' => {
                         carts.push(Cart::new((col, row), Direction::Left, 'v'));
                         track_map.insert((col, row), TrackType::Vertical)
-                    },
+                    }
                     _ => None,
                 };
             }
@@ -172,8 +169,12 @@ pub mod day13 {
         (track_map, carts)
     }
 
-    pub fn print_board(carts: &Vec<Cart>, track_map: &HashMap<(usize, usize), TrackType>, t: i32, sleep_time: u64) {
-
+    pub fn print_board(
+        carts: &Vec<Cart>,
+        track_map: &HashMap<(usize, usize), TrackType>,
+        t: i32,
+        sleep_time: u64,
+    ) {
         let tmsg = format!("Tick: {:?}", t);
         mvprintw(0, 0, &tmsg);
         curs_set(CURSOR_VISIBILITY::CURSOR_INVISIBLE);
@@ -190,7 +191,11 @@ pub mod day13 {
         }
         for cart in carts {
             if cart.orientation != 'X' {
-                mvprintw((cart.pos.1 + 2) as i32, cart.pos.0 as i32, &(String::from_utf8_lossy(&[cart.orientation as u8])));
+                mvprintw(
+                    (cart.pos.1 + 2) as i32,
+                    cart.pos.0 as i32,
+                    &(String::from_utf8_lossy(&[cart.orientation as u8])),
+                );
             }
         }
         refresh();

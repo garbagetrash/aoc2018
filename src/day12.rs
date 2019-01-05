@@ -45,7 +45,7 @@ pub mod day12 {
             for (idx, pot) in self.pots.iter().enumerate() {
                 if idx > 1 && idx < self.pots.len() - 2 {
                     let mut key = [0u8; 5];
-                    key.copy_from_slice(&self.pots[idx-2..idx+3]);
+                    key.copy_from_slice(&self.pots[idx - 2..idx + 3]);
                     if let Some(new_pot) = rule_set.rules.get(&key) {
                         new_pots.push(*new_pot);
                     } else {
@@ -81,9 +81,7 @@ pub mod day12 {
 
     impl RuleSet {
         pub fn new(rules: HashMap<[u8; 5], u8>) -> RuleSet {
-            RuleSet {
-                rules: rules,
-            }
+            RuleSet { rules: rules }
         }
     }
 
@@ -137,7 +135,9 @@ pub mod day12 {
         }
 
         let mut output = 0;
-        for (idx, i) in (srtup.0.start_idx..srtup.0.start_idx + srtup.0.pots.len() as i32).enumerate() {
+        for (idx, i) in
+            (srtup.0.start_idx..srtup.0.start_idx + srtup.0.pots.len() as i32).enumerate()
+        {
             if srtup.0.pots[idx] == 1 {
                 output += i;
             }
@@ -159,7 +159,8 @@ pub mod day12 {
 
         #[test]
         fn part1examples() {
-            let input = String::from("initial state: #..#.#..##......###...###
+            let input = String::from(
+                "initial state: #..#.#..##......###...###
 
                 ...## => #
                 ..#.. => #
@@ -174,13 +175,15 @@ pub mod day12 {
                 ##.## => #
                 ###.. => #
                 ###.# => #
-                ####. => #");
+                ####. => #",
+            );
             assert_eq!(part1(&input), 325);
         }
 
         #[test]
         fn part2examples() {
-            let input = String::from("initial state: #..#.#..##......###...###
+            let input = String::from(
+                "initial state: #..#.#..##......###...###
 
                 ...## => #
                 ..#.. => #
@@ -195,7 +198,8 @@ pub mod day12 {
                 ##.## => #
                 ###.. => #
                 ###.# => #
-                ####. => #");
+                ####. => #",
+            );
             assert_eq!(part2(&input), 1);
         }
     }

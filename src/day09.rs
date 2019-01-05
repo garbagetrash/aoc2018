@@ -16,7 +16,6 @@ pub mod day09 {
     }
 
     pub fn part1(input: &str) -> usize {
-
         let re = Regex::new(r"(\d+) players; last marble is worth (\d+) points").unwrap();
         let mut n_players = 0;
         let mut n_marbles = 0;
