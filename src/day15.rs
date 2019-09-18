@@ -3,6 +3,7 @@ pub mod day15 {
     extern crate regex;
 
     use ncurses::*;
+    use std::cmp::Ordering;
     use std::fs::File;
     use std::io::Read;
     use std::{thread, time};
@@ -24,10 +25,16 @@ pub mod day15 {
     impl Tile {
         pub fn new(pos: (usize, usize), tile_type: TileType) -> Tile {
             Tile {
-                pos: pos,
-                tile_type: tile_type,
+                pos,
+                tile_type,
             }
         }
+    }
+
+    fn dist_to_tile(pos1: &(usize, usize), pos2: &(usize, usize)) -> u32 {
+        let mut dist = (pos1.0 as i32 - pos2.0 as i32).abs() as u32;
+        dist += (pos1.1 as i32 - pos2.1 as i32).abs() as u32;
+        dist
     }
 
     #[derive(Debug)]
@@ -37,8 +44,8 @@ pub mod day15 {
     }
 
     impl Goblin {
-        pub fn new(pos: (usize, usize), hp: i32) -> Goblin {
-            Goblin { pos: pos, hp: hp }
+        pub fn new(pos: (usize, usize)) -> Goblin {
+            Goblin { pos: pos, hp: 200 }
         }
 
         pub fn attack(&self, elf: &mut Elf) {
@@ -52,56 +59,121 @@ pub mod day15 {
         hp: i32,
     }
 
-    impl Elf {
-        pub fn new(pos: (usize, usize), hp: i32) -> Elf {
-            Elf { pos: pos, hp: hp }
+    #[derive(Debug, Clone, PartialEq, Eq)]
+    pub enum Side {
+        Goblin,
+        Elf,
+    }
+
+    #[derive(Debug, PartialEq, Eq, Clone)]
+    pub struct Unit {
+        pos: (usize, usize),
+        side: Side,
+        hp: i32,
+    }
+
+    impl Unit {
+        fn new(pos: (usize, usize), side: Side, hp: i32) -> Unit {
+            Unit {
+                pos,
+                side,
+                hp,
+            }
         }
 
-        pub fn attack(&self, goblin: &mut Goblin) {
-            goblin.hp -= 3;
+        fn attack(&self, other: &mut Unit) {
+            other.hp -= 3;
         }
 
-        pub fn turn(&mut self, board: &Board) {
+        fn turn(&mut self, board: &Board, units: &Vec<Unit>) {
+
             // ID possible targets
-            let targets = &board.goblins;
+            let mut targets = vec![];
+            for unit in units {
+                if unit.side != self.side {
+                    targets.push(unit.clone());
+                }
+            }
+            targets.sort();
 
             // ID Open Tiles in range of the target (adjacent)
-            let mut in_range = Vec::new();
-            for target in targets {
+            let mut open_tiles = Vec::new();
+            for target in &targets {
                 for candidate in board.adjacent_tiles(target.pos) {
                     if let Some(tile) = candidate {
                         if tile.tile_type == TileType::Open {
-                            in_range.push(tile);
+                            let tile_range = dist_to_tile(&self.pos, &tile.pos);
+                            open_tiles.push((tile_range, tile));
                         }
                     }
                 }
             }
+            println!("Possible targets: {:?}", &targets);
 
-            // If not in range of target, and no Open Tiles adjacent, end turn
+            // Make a vector of the ranges to targets
+            let mut target_ranges = vec![];
+            for target in &targets {
+                target_ranges.push(dist_to_tile(&self.pos, &target.pos));
+            }
 
-            // If already in range, attack
-
+            // Iterate through targets and choose one somehow
+            for (target, t_range) in targets.iter().zip(target_ranges.iter()) {
+                if *t_range == 1 {
+                    // If already in range, attack
+                    // TODO: ATTACK
+                    // Have to make it possible to mutate others hp, no idea how to do this
+                    return
+                } else if open_tiles.len() == 0 {
+                    // If not in range of target, and no Open Tiles adjacent,
+                    // end turn
+                    return
+                }
+            }
             // If not in range, then move
+            // TODO: MOVE
+            // create (range, target) tuple vec, sort_by() range, take(1), move
+            // towards him
 
             // If after move in range, attack
 
-            // After attacking, end turn
+            // Make a vector of the ranges to targets
+            let mut target_ranges = vec![];
+            for target in &targets {
+                target_ranges.push(dist_to_tile(&self.pos, &target.pos));
+            }
+
+            for (target, t_range) in targets.iter().zip(target_ranges.iter()) {
+                if *t_range == 1{
+                    // After attacking, end turn
+                    // TODO: ATTACK
+                    // Have to make it possible to mutate others hp, no idea how to do this
+                    return
+                }
+            }
+        }
+    }
+
+    impl Ord for Unit {
+        fn cmp(&self, other: &Self) -> Ordering {
+            self.pos.cmp(&other.pos)
+        }
+    }
+
+    impl PartialOrd for Unit {
+        fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+            Some(self.cmp(other))
         }
     }
 
     #[derive(Debug)]
     pub struct Board {
-        board: Vec<Vec<Tile>>,
-        goblins: Vec<Goblin>,
-        elves: Vec<Elf>,
+        tiles: Vec<Vec<Tile>>,
     }
 
     impl Board {
         pub fn new() -> Board {
             Board {
-                board: Vec::new(),
-                goblins: Vec::new(),
-                elves: Vec::new(),
+                tiles: Vec::new(),
             }
         }
 
@@ -110,28 +182,28 @@ pub mod day15 {
 
             // Up
             if pos.0 > 0 {
-                output.push(Some(self.board[pos.0 - 1][pos.1].clone()));
+                output.push(Some(self.tiles[pos.0 - 1][pos.1].clone()));
             } else {
                 output.push(None);
             }
 
             // Right
-            if pos.1 < self.board[0].len() - 1 {
-                output.push(Some(self.board[pos.0][pos.1 + 1].clone()));
+            if pos.1 < self.tiles[0].len() - 1 {
+                output.push(Some(self.tiles[pos.0][pos.1 + 1].clone()));
             } else {
                 output.push(None);
             }
 
             // Down
-            if pos.0 < self.board.len() - 1 {
-                output.push(Some(self.board[pos.0 + 1][pos.1].clone()));
+            if pos.0 < self.tiles.len() - 1 {
+                output.push(Some(self.tiles[pos.0 + 1][pos.1].clone()));
             } else {
                 output.push(None);
             }
 
             // Left
             if pos.1 > 0 {
-                output.push(Some(self.board[pos.0][pos.1 - 1].clone()));
+                output.push(Some(self.tiles[pos.0][pos.1 - 1].clone()));
             } else {
                 output.push(None);
             }
@@ -149,8 +221,9 @@ pub mod day15 {
         buffer.to_string()
     }
 
-    pub fn parse_input(input: &str) -> Board {
+    pub fn parse_input(input: &str) -> (Board, Vec<Unit>) {
         let mut board = Board::new();
+        let mut units = vec![];
         for (row, l) in input.lines().enumerate() {
             let mut board_row = Vec::new();
             for (col, c) in l.chars().enumerate() {
@@ -159,27 +232,37 @@ pub mod day15 {
                     '.' => board_row.push(Tile::new((row, col), TileType::Open)),
                     'G' => {
                         board_row.push(Tile::new((row, col), TileType::Goblin));
-                        board.goblins.push(Goblin::new((row, col), 200));
+                        units.push(Unit::new((row, col), Side::Goblin, 200));
                     }
                     'E' => {
                         board_row.push(Tile::new((row, col), TileType::Elf));
-                        board.elves.push(Elf::new((row, col), 200));
+                        units.push(Unit::new((row, col), Side::Elf, 200));
                     }
                     _ => (),
                 };
             }
-            board.board.push(board_row);
+            board.tiles.push(board_row);
         }
-        board
+        (board, units)
     }
 
     pub fn part1(input: &str) -> u32 {
-        let mut board = parse_input(input);
+        let (mut board, mut units) = parse_input(input);
+        units.sort();
+        println!("{:?}", units);
+
+        // Simulate a round
+        let units_copy = units.clone();
+        for unit in &mut units {
+            unit.turn(&board, &units_copy);
+        }
+        println!("{:?}", units);
+
         0
     }
 
     pub fn part2(input: &str) -> u32 {
-        let mut board = parse_input(input);
+        let (mut board, mut units) = parse_input(input);
         0
     }
 
