@@ -73,7 +73,7 @@ pub mod day13 {
                 'v' => self.pos.1 += 1,
                 '<' => self.pos.0 -= 1,
                 '^' => self.pos.1 -= 1,
-                _ => panic!(format!("Invalid orientation: {}", self.orientation)),
+                _ => panic!("Invalid orientation: {}", self.orientation),
             }
 
             // Turn
