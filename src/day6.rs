@@ -1,15 +1,10 @@
-use std::collections::HashMap;
-use std::collections::HashSet;
 use scan_fmt::scan_fmt;
+use std::collections::HashMap;
 
 #[aoc_generator(day6)]
-pub fn load_input(input: &str) -> String {
-    input.to_string()
-}
-
-pub fn point_vec(in_str: &str) -> Vec<(i32, i32)> {
+fn load_input(input: &str) -> Vec<(i32, i32)> {
     let mut vec = vec![];
-    for line in in_str.lines() {
+    for line in input.lines() {
         vec.push(scan_fmt!(line, "{}, {}", i32, i32).unwrap());
     }
     vec
@@ -17,62 +12,86 @@ pub fn point_vec(in_str: &str) -> Vec<(i32, i32)> {
 
 fn grid_limits(pts: &[(i32, i32)]) -> (i32, i32, i32, i32) {
     // return grid (xmin, xmax, ymin, ymax)
-    let mut xmin = pts[0].0;
-    let mut xmax = pts[0].0;
-    let mut ymin = pts[0].1;
-    let mut ymax = pts[0].1;
-    for pt in pts {
-        if pt.0 < xmin {
-            xmin = pt.0;
-        } else if pt.0 > xmax {
-            xmax = pt.0;
-        }
-        if pt.1 < ymin {
-            ymin = pt.1;
-        } else if pt.1 > ymax {
-            ymax = pt.1;
-        }
-    }
+    let xmin = pts.iter().map(|p| p.0).min().unwrap();
+    let xmax = pts.iter().map(|p| p.0).max().unwrap();
+    let ymin = pts.iter().map(|p| p.1).min().unwrap();
+    let ymax = pts.iter().map(|p| p.1).max().unwrap();
     (xmin, xmax, ymin, ymax)
 }
 
-pub fn man_dist(p1: (i32, i32), p2: (i32, i32)) -> u32 {
-    ((p1.0 - p2.0).abs() + (p1.1 - p2.1).abs()) as u32
+pub fn man_dist(p1: (i32, i32), p2: (i32, i32)) -> i32 {
+    (p1.0 - p2.0).abs() + (p1.1 - p2.1).abs()
 }
 
-pub fn closest_point(pt: &(i32, i32), pts: &[(i32, i32)]) -> usize {
-    // TODO: Doesn't detect if 2+ points have equal min. distance
+pub fn closest_points(pt: &(i32, i32), pts: &[(i32, i32)]) -> Vec<usize> {
     let mut min_dist = man_dist(pts[0], *pt);
-    let mut min_idx = 0;
+    let mut min_idx_vec = vec![0];
     for (i, p) in pts.iter().enumerate() {
         let dist = man_dist(*p, *pt);
         if dist < min_dist {
             min_dist = dist;
-            min_idx = i;
+            min_idx_vec = vec![i];
+        } else if dist == min_dist {
+            min_idx_vec.push(i);
         }
     }
-    min_idx
+    min_idx_vec
 }
 
-pub fn make_map(pts: &[(i32, i32)]) -> HashMap<(i32, i32), u32> {
+pub fn make_map(pts: &[(i32, i32)]) -> HashMap<(i32, i32), Option<usize>> {
     // Returns hashmap with grid of points and value index of pt closest
     let mut output = HashMap::new();
     let (xmin, xmax, ymin, ymax) = grid_limits(pts);
-    for x in xmin..xmax+1 {
-        for y in ymin..ymax+1 {
-            let c_idx = closest_point(&(x, y), pts);
-            output.insert((x, y), c_idx as u32);
+    for x in xmin..xmax + 1 {
+        for y in ymin..ymax + 1 {
+            let c_idxs = closest_points(&(x, y), pts);
+            if c_idxs.len() == 1 {
+                output.insert((x, y), Some(c_idxs[0]));
+            } else {
+                output.insert((x, y), None);
+            }
         }
     }
     output
 }
 
-pub fn part2_map(pts: &Vec<(i32, i32)>) -> HashMap<(i32, i32), u32> {
+fn part2_grid_limits(pts: &[(i32, i32)], limit: i32) -> (i32, i32, i32, i32) {
+    // return grid (xmin, xmax, ymin, ymax)
+    let mut xmin = pts.iter().map(|p| p.0).min().unwrap();
+    let mut xmax = pts.iter().map(|p| p.0).max().unwrap();
+    let mut ymin = pts.iter().map(|p| p.1).min().unwrap();
+    let mut ymax = pts.iter().map(|p| p.1).max().unwrap();
+
+    let mut xmin_d: i32 = pts.iter().map(|p| (p.0 - xmin).abs()).sum();
+    while xmin_d < limit {
+        xmin -= 1;
+        xmin_d = pts.iter().map(|p| (p.0 - xmin).abs()).sum();
+    }
+    let mut xmax_d: i32 = pts.iter().map(|p| (p.0 - xmax).abs()).sum();
+    while xmax_d < limit {
+        xmax += 1;
+        xmax_d = pts.iter().map(|p| (p.0 - xmax).abs()).sum();
+    }
+    let mut ymin_d: i32 = pts.iter().map(|p| (p.1 - ymin).abs()).sum();
+    while ymin_d < limit {
+        ymin -= 1;
+        ymin_d = pts.iter().map(|p| (p.1 - ymin).abs()).sum();
+    }
+    let mut ymax_d: i32 = pts.iter().map(|p| (p.1 - ymax).abs()).sum();
+    while ymax_d < limit {
+        ymax += 1;
+        ymax_d = pts.iter().map(|p| (p.1 - ymax).abs()).sum();
+    }
+
+    (xmin, xmax, ymin, ymax)
+}
+
+fn part2_map(pts: &[(i32, i32)], limit: i32) -> HashMap<(i32, i32), i32> {
+    let (xmin, xmax, ymin, ymax) = part2_grid_limits(pts, limit);
     let mut output = HashMap::new();
-    let r = 500;
-    for x in 0..r {
-        for y in 0..r {
-            let sum_dist: u32 = pts.iter().map(|xt| man_dist(*xt, (x, y))).sum();
+    for x in xmin..xmax {
+        for y in ymin..ymax {
+            let sum_dist: i32 = pts.iter().map(|p| man_dist(*p, (x, y))).sum();
             output.insert((x, y), sum_dist);
         }
     }
@@ -80,24 +99,21 @@ pub fn part2_map(pts: &Vec<(i32, i32)>) -> HashMap<(i32, i32), u32> {
 }
 
 #[aoc(day6, part1)]
-pub fn part1(input: &str) -> usize {
-    let pts = point_vec(input);
-
-    let map = make_map(&pts);
-    let mut c_idx = HashSet::new();
-    for x in 0..500 {
-        c_idx.insert(map.get(&(x, 0)).unwrap());
-        c_idx.insert(map.get(&(x, 499)).unwrap());
-        c_idx.insert(map.get(&(0, x)).unwrap());
-        c_idx.insert(map.get(&(499, x)).unwrap());
-    }
+fn part1(input: &[(i32, i32)]) -> usize {
+    let map = make_map(input);
+    let (xmin, xmax, ymin, ymax) = grid_limits(input);
 
     let mut sizes = Vec::new();
-    for i in 0..pts.len() {
+    for i in 0..input.len() {
         let mut cnt = 0;
-        if !c_idx.contains(&(i as u32)) {
-            for val in map.values() {
-                if i == *val as usize {
+        for (key, val) in map.iter() {
+            if let Some(value) = *val {
+                if i == value {
+                    if key.0 == xmin || key.0 == xmax || key.1 == ymin || key.1 == ymax {
+                        // This point has a border and thus is infinite sized
+                        cnt = 0;
+                        break;
+                    }
                     cnt += 1;
                 }
             }
@@ -107,17 +123,20 @@ pub fn part1(input: &str) -> usize {
     *sizes.iter().max().unwrap() as usize
 }
 
-#[aoc(day6, part2)]
-pub fn part2(input: &str) -> usize {
-    let pt_vec = point_vec(input);
-    let map = part2_map(&pt_vec);
+fn part2_dist(input: &[(i32, i32)], limit: i32) -> usize {
+    let map = part2_map(input, limit);
     let mut cnt = 0;
-    for val in map.values() {
-        if val < &32 {
+    for &val in map.values() {
+        if val < limit {
             cnt += 1;
         }
     }
     cnt
+}
+
+#[aoc(day6, part2)]
+pub fn part2(input: &[(i32, i32)]) -> usize {
+    part2_dist(input, 10000)
 }
 
 #[cfg(test)]
@@ -136,6 +155,6 @@ mod test {
     fn test_part2() {
         let input = read_to_string("input/2018/06.txt").unwrap();
         let input = load_input(&input);
-        assert_eq!(part2(&input), 16);
+        assert_eq!(part2_dist(&input, 32), 16);
     }
 }
