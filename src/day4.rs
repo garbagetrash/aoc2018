@@ -106,7 +106,7 @@ pub fn load_input(input: &str) -> Vec<LogEntry> {
     output
 }
 
-fn make_guard_map(logs: &Vec<LogEntry>) -> HashMap<u32, HashMap<u32, u32>> {
+fn make_guard_map(logs: &[LogEntry]) -> HashMap<u32, HashMap<u32, u32>> {
     let mut start_time: u32 = 0;
     let mut guards = HashMap::new();
     let mut current_id = 0;
@@ -140,7 +140,7 @@ fn make_guard_map(logs: &Vec<LogEntry>) -> HashMap<u32, HashMap<u32, u32>> {
 }
 
 #[aoc(day4, part1)]
-pub fn part1(logs: &Vec<LogEntry>) -> u32 {
+pub fn part1(logs: &[LogEntry]) -> u32 {
     let mut guards = make_guard_map(logs);
     let mut total_sleep_guard = Vec::new();
     for (id, map) in guards.iter() {
@@ -175,7 +175,7 @@ pub fn part1(logs: &Vec<LogEntry>) -> u32 {
 }
 
 #[aoc(day4, part2)]
-pub fn part2(logs: &Vec<LogEntry>) -> u32 {
+pub fn part2(logs: &[LogEntry]) -> u32 {
     let guards = make_guard_map(logs);
     let mut max_id = 0;
     let mut max_min = 0;
@@ -195,28 +195,19 @@ pub fn part2(logs: &Vec<LogEntry>) -> u32 {
 #[cfg(test)]
 mod test {
     use super::*;
+    use std::fs::read_to_string;
 
     #[test]
-    fn test_part1example() {
-        let input = load_input("inputs/04example.txt");
+    fn test_part1() {
+        let input = read_to_string("input/2018/04.txt").unwrap();
+        let input = load_input(&input);
         assert_eq!(part1(&input), 240);
     }
 
     #[test]
-    fn test_part1() {
-        let input = load_input("inputs/04.txt");
-        assert_eq!(part1(&input), 74743);
-    }
-
-    #[test]
-    fn test_part2example() {
-        let input = load_input("inputs/04example.txt");
-        assert_eq!(part2(&input), 4455);
-    }
-
-    #[test]
     fn test_part2() {
-        let input = load_input("inputs/04.txt");
-        assert_eq!(part2(&input), 132484);
+        let input = read_to_string("input/2018/04.txt").unwrap();
+        let input = load_input(&input);
+        assert_eq!(part2(&input), 4455);
     }
 }
