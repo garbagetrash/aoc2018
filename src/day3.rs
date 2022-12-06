@@ -13,11 +13,11 @@ pub struct Rect {
 impl Rect {
     pub fn new(id: u32, space_left: u32, space_top: u32, width: u32, height: u32) -> Rect {
         Rect {
-            id: id,
-            space_left: space_left,
-            space_top: space_top,
-            width: width,
-            height: height,
+            id,
+            space_left,
+            space_top,
+            width,
+            height,
         }
     }
 }

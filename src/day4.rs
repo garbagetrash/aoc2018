@@ -13,11 +13,11 @@ struct Time {
 impl Time {
     fn new(year: u32, month: u32, day: u32, hour: u32, minute: u32) -> Time {
         Time {
-            year: year,
-            month: month,
-            day: day,
-            hour: hour,
-            minute: minute,
+            year,
+            month,
+            day,
+            hour,
+            minute,
         }
     }
 }
@@ -37,10 +37,7 @@ pub struct LogEntry {
 
 impl LogEntry {
     fn new(time: Time, event: Event) -> LogEntry {
-        LogEntry {
-            time: time,
-            event: event,
-        }
+        LogEntry { time, event }
     }
 }
 

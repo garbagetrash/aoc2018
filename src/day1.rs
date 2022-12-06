@@ -6,12 +6,12 @@ pub fn load_input(input: &str) -> Vec<i64> {
 }
 
 #[aoc(day1, part1)]
-pub fn part1(input: &Vec<i64>) -> i64 {
-    input.iter().fold(0, |acc, x| acc + x)
+pub fn part1(input: &[i64]) -> i64 {
+    input.iter().sum()
 }
 
 #[aoc(day1, part2)]
-pub fn part2(input: &Vec<i64>) -> i64 {
+pub fn part2(input: &[i64]) -> i64 {
     let mut sum = 0 as i64;
     let mut set = HashSet::new();
 
