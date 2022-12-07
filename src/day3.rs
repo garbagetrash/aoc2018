@@ -96,7 +96,7 @@ pub fn part2(input: &Vec<Rect>) -> u32 {
             if r1.id == r2.id {
                 continue;
             }
-            if let Some(_) = intersection(&r1, &r2) {
+            if intersection(r1, r2).is_some() {
                 if let Some(x) = claims.get_mut(&r1.id) {
                     *x += 1;
                 }

@@ -1,4 +1,5 @@
 use scan_fmt::scan_fmt;
+use std::cmp::Ordering;
 use std::collections::HashMap;
 
 #[aoc_generator(day6)]
@@ -28,11 +29,13 @@ pub fn closest_points(pt: &(i32, i32), pts: &[(i32, i32)]) -> Vec<usize> {
     let mut min_idx_vec = vec![0];
     for (i, p) in pts.iter().enumerate() {
         let dist = man_dist(*p, *pt);
-        if dist < min_dist {
-            min_dist = dist;
-            min_idx_vec = vec![i];
-        } else if dist == min_dist {
-            min_idx_vec.push(i);
+        match dist.cmp(&min_dist) {
+            Ordering::Less => {
+                min_dist = dist;
+                min_idx_vec = vec![i];
+            }
+            Ordering::Equal => min_idx_vec.push(i),
+            _ => (),
         }
     }
     min_idx_vec

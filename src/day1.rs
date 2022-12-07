@@ -12,7 +12,7 @@ pub fn part1(input: &[i64]) -> i64 {
 
 #[aoc(day1, part2)]
 pub fn part2(input: &[i64]) -> i64 {
-    let mut sum = 0 as i64;
+    let mut sum = 0_i64;
     let mut set = HashSet::new();
 
     set.insert(sum);

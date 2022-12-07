@@ -17,8 +17,8 @@ pub fn counter(input: &str) -> (bool, bool) {
     }
 
     // A count for each occurrance of exactly 2 or 3 identical letters
-    let count2 = lettermap.values().fold(false, |acc, x| acc || *x == 2);
-    let count3 = lettermap.values().fold(false, |acc, x| acc || *x == 3);
+    let count2 = lettermap.values().any(|x| *x == 2);
+    let count3 = lettermap.values().any(|x| *x == 3);
     (count2, count3)
 }
 
@@ -27,7 +27,7 @@ pub fn part1(input: &Vec<String>) -> u32 {
     let mut count2sum = 0;
     let mut count3sum = 0;
     for line in input {
-        let (count2, count3) = counter(&line);
+        let (count2, count3) = counter(line);
         if count2 {
             count2sum += 1;
         }
@@ -53,7 +53,7 @@ pub fn part2(input: &Vec<String>) -> String {
     let mut output = String::new();
     for line1 in input {
         for line2 in input {
-            if diff(&line1, &line2) == 1 {
+            if diff(line1, line2) == 1 {
                 // found our boxes
                 for (c1, c2) in line1.chars().zip(line2.chars()) {
                     if c1 == c2 {

@@ -110,13 +110,13 @@ fn make_guard_map(logs: &[LogEntry]) -> HashMap<u32, HashMap<u32, u32>> {
     for log in logs {
         match log.event {
             Event::ShiftBegins(id) => {
-                if !guards.contains_key(&id) {
+                guards.entry(id).or_insert_with(|| {
                     let mut minmap: HashMap<u32, u32> = HashMap::new();
                     for min in 0..60 {
                         minmap.insert(min, 0);
                     }
-                    guards.insert(id, minmap);
-                }
+                    minmap
+                });
                 current_id = id;
             }
             Event::FallsAsleep => {

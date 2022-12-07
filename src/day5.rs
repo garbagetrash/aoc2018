@@ -21,17 +21,14 @@ fn iterate(seq: &[char]) -> Vec<char> {
             if letters[0] == letters[1].to_lowercase().next().unwrap() && letters[1].is_uppercase()
             {
                 false
-            } else if letters[0].to_lowercase().next().unwrap() == letters[1]
-                && letters[0].is_uppercase()
-            {
-                false
             } else {
-                true
+                !(letters[0].to_lowercase().next().unwrap() == letters[1]
+                    && letters[0].is_uppercase())
             }
         })
         .collect::<Vec<_>>()
         .concat();
-    if end.len() > 0 {
+    if !end.is_empty() {
         next_seq.push(end[0]);
     }
     next_seq
