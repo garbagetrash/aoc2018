@@ -1,206 +1,228 @@
-pub mod day12 {
-    extern crate regex;
+extern crate regex;
 
-    use regex::Regex;
-    use std::collections::HashMap;
-    use std::fs::File;
-    use std::io::Read;
+use regex::Regex;
+use std::collections::{HashSet, HashMap};
+use std::fs::File;
+use std::io::Read;
 
-    pub fn load_input(filename: &str) -> String {
-        let mut buffer = String::new();
-        File::open(filename)
-            .unwrap()
-            .read_to_string(&mut buffer)
-            .unwrap();
-        buffer.trim().to_string()
+type RuleSet = HashMap<[u8; 5], u8>;
+type State = Vec<u8>;
+
+fn rule_lookup(state: &[u8], ruleset: &RuleSet) -> u8 {
+    if state.len() == 5 {
+        let _state: [u8; 5] = [state[0], state[1], state[2], state[3], state[4]];
+        if let Some(output) = ruleset.get(&_state) {
+            return *output;
+        } else {
+            println!("_state: {:?}", _state);
+            panic!("");
+        }
+    } else {
+        panic!("Can't call lookup on state length n != 5");
+    }
+}
+
+fn next_state(state: &[u8], ruleset: &RuleSet, cache: &mut HashMap<Vec<u8>, Vec<u8>>) -> Vec<u8> {
+    let N = state.len();
+    //println!("N: {}", N);
+
+    // First check cache (memoization)
+    match cache.get(state) {
+        Some(answer) => {
+            return answer.clone();
+        },
+        None => (),
     }
 
-    #[derive(Debug)]
-    pub struct State {
-        pub pots: Vec<u8>,
-        pub start_idx: i32,
-    }
-
-    impl State {
-        pub fn new(pots: Vec<u8>, start_idx: i32) -> State {
-            State {
-                pots: pots,
-                start_idx: start_idx,
-            }
+    // If not already in cache, then do the recursion stuff
+    // Check base case
+    let mut output = vec![];
+    if N == 5 {
+        output = vec![rule_lookup(state, ruleset)];
+    } else if N > 5 {
+        let half_len = N / 2;
+        //println!("half_len: {}", half_len);
+        if half_len < 3 {
+            panic!("we're requiring that half_len >= 3");
+        }
+        if N - 3 < half_len - 2 {
+            panic!("we're requiring that N - 3 < half_len - 2");
         }
 
-        pub fn next_iter(&mut self, rule_set: &RuleSet) {
-            // Expand limits 4 more pots
-            &self.pots.insert(0, 0);
-            &self.pots.insert(0, 0);
-            &self.pots.insert(0, 0);
-            &self.pots.insert(0, 0);
-            &self.pots.push(0);
-            &self.pots.push(0);
-            &self.pots.push(0);
-            &self.pots.push(0);
-            let mut new_pots: Vec<u8> = Vec::new();
+        // Divide the problem into 2 (carefully)
+        //let left = state[..half_len+2];
+        //let right = state[half_len-2..];
 
-            // Apply rules to build new pots vec
-            for (idx, pot) in self.pots.iter().enumerate() {
-                if idx > 1 && idx < self.pots.len() - 2 {
-                    let mut key = [0u8; 5];
-                    key.copy_from_slice(&self.pots[idx - 2..idx + 3]);
-                    if let Some(new_pot) = rule_set.rules.get(&key) {
-                        new_pots.push(*new_pot);
-                    } else {
-                        new_pots.push(0);
-                    }
-                }
+        // Recurse on left and right halves
+        output = next_state(&state[..half_len+2], ruleset, cache);
+        let mut right_output = next_state(&state[half_len-2..], ruleset, cache);
+        output.append(&mut right_output);
+    } else {
+        panic!("N < 5... we can't let this happen");
+    }
+    cache.insert(state.to_vec(), output.clone());
+    return output;
+}
+
+#[aoc_generator(day12)]
+pub fn parse_input(input: &str) -> (State, RuleSet) {
+    let re1 = Regex::new(r"initial state: ([\.\#]+)").unwrap();
+    let re2 = Regex::new(r"([\.\#]{5}) => ([\.\#])").unwrap();
+    let mut pots = Vec::new();
+    for cap in re1.captures_iter(input) {
+        for c in cap[1].chars() {
+            match c {
+                '.' => pots.push(0),
+                '#' => pots.push(1),
+                _ => panic!("WTFBBQ1"),
             }
-
-            // Clean up unnecessary limit pots
-            let mut cnt = 0;
-            loop {
-                let mut key = [0u8; 5];
-                key.copy_from_slice(&new_pots[..5]);
-                if key == [0u8; 5] {
-                    new_pots.remove(0);
-                    cnt += 1;
-                } else {
-                    break;
-                }
-            }
-
-            // Set self.pots to new pots vec
-            self.pots = new_pots;
-
-            // Adjust start_idx as necessary
-            self.start_idx -= 2 - cnt;
         }
     }
-
-    pub struct RuleSet {
-        pub rules: HashMap<[u8; 5], u8>,
-    }
-
-    impl RuleSet {
-        pub fn new(rules: HashMap<[u8; 5], u8>) -> RuleSet {
-            RuleSet { rules: rules }
-        }
-    }
-
-    pub fn parse_input(input: &str) -> (State, RuleSet) {
-        let re1 = Regex::new(r"initial state: ([\.\#]+)").unwrap();
-        let re2 = Regex::new(r"([\.\#]{5}) => ([\.\#])").unwrap();
-        let mut pots = Vec::new();
-        for cap in re1.captures_iter(input) {
-            for c in cap[1].chars() {
-                match c {
-                    '.' => pots.push(0),
-                    '#' => pots.push(1),
-                    _ => panic!("WTFBBQ1"),
-                }
+    let mut rules = HashMap::new();
+    for cap in re2.captures_iter(input) {
+        let mut pattern = Vec::new();
+        for c in cap[1].chars() {
+            match c {
+                '.' => pattern.push(0),
+                '#' => pattern.push(1),
+                _ => panic!("WTFBBQ2"),
             }
         }
-        let mut rules = RuleSet::new(HashMap::new());
-        for cap in re2.captures_iter(input) {
-            let mut pattern = Vec::new();
-            for c in cap[1].chars() {
-                match c {
-                    '.' => pattern.push(0),
-                    '#' => pattern.push(1),
-                    _ => panic!("WTFBBQ2"),
-                }
-            }
-            let mut output = 0;
-            for c in cap[2].chars() {
-                match c {
-                    '.' => output = 0,
-                    '#' => output = 1,
-                    _ => panic!("WTFBBQ3"),
-                }
-            }
-            let mut arr = [0; 5];
-            arr.copy_from_slice(pattern.as_slice());
-            rules.rules.insert(arr, output);
-        }
-        (State::new(pots, 0), rules)
-    }
-
-    pub fn solver(input: &str, n_iter: usize) -> i32 {
-        let mut prev_res: HashMap<Vec<u8>, u8> = HashMap::new();
-        let mut srtup = parse_input(input);
-        for i in 0..n_iter {
-            if let Some(val) = prev_res.insert(srtup.0.pots.clone(), 1) {
-                println!("Cycle detected!: {}", i);
-                break;
-            }
-            srtup.0.next_iter(&srtup.1);
-        }
-
         let mut output = 0;
-        for (idx, i) in
-            (srtup.0.start_idx..srtup.0.start_idx + srtup.0.pots.len() as i32).enumerate()
-        {
-            if srtup.0.pots[idx] == 1 {
-                output += i;
+        for c in cap[2].chars() {
+            match c {
+                '.' => output = 0,
+                '#' => output = 1,
+                _ => panic!("WTFBBQ3"),
             }
         }
-        output
+        let mut arr = [0; 5];
+        arr.copy_from_slice(pattern.as_slice());
+        rules.insert(arr, output);
+    }
+    (pots, rules)
+}
+
+fn add_zeros(state: &mut Vec<u8>) -> i64 {
+    let mut nzeros = 0;
+    if state[0] == 1 {
+        nzeros = 4;
+    } else if state[1] == 1 {
+        nzeros = 3;
+    } else if state[2] == 1 {
+        nzeros = 2;
+    } else if state[3] == 1 {
+        nzeros = 1;
+    }
+    for j in 0..nzeros {
+        state.insert(0, 0);
     }
 
-    pub fn part1(input: &str) -> i32 {
-        solver(input, 20)
+    let N = state.len();
+    let mut nzeros_ = 0;
+    if state[N - 1] == 1 {
+        nzeros_ = 4;
+    } else if state[N - 2] == 1 {
+        nzeros_ = 3;
+    } else if state[N - 3] == 1 {
+        nzeros_ = 2;
+    } else if state[N - 4] == 1 {
+        nzeros_ = 1;
     }
-
-    pub fn part2(input: &str) -> i32 {
-        solver(input, 50000000000)
+    for j in 0..nzeros_ {
+        state.push(0);
     }
+    nzeros
+}
 
-    #[cfg(test)]
-    mod test {
-        use super::*;
+fn trim_zeros(state: &mut Vec<u8>) -> i64 {
+    let mut zeros_skipped: i64 = 0;
+    while state[0] == 0 {
+        state.remove(0);
+        zeros_skipped += 1;
+    }
+    while state[state.len() - 1] == 0 {
+        state.pop();
+    }
+    zeros_skipped
+}
 
-        #[test]
-        fn part1examples() {
-            let input = String::from(
-                "initial state: #..#.#..##......###...###
+pub fn solver(input: &(State, RuleSet), n_iter: usize, part2: bool) -> i64 {
+    let mut cache = HashMap::<Vec<u8>, Vec<u8>>::new();
+    let mut state: Vec<u8> = input.0.clone();
+    let mut startidx = trim_zeros(&mut state);
+    let ruleset = input.1.clone();
 
-                ...## => #
-                ..#.. => #
-                .#... => #
-                .#.#. => #
-                .#.## => #
-                .##.. => #
-                .#### => #
-                #.#.# => #
-                #.### => #
-                ##.#. => #
-                ##.## => #
-                ###.. => #
-                ###.# => #
-                ####. => #",
-            );
-            assert_eq!(part1(&input), 325);
+    let mut prior_states = HashMap::new();
+    let mut equalibrium = vec![];
+
+    let mut last_iter = 0;
+    for i in 0..n_iter {
+        //print_state(&state, startidx);
+        let zeros_added = add_zeros(&mut state); // this should always add 4 zeros to start and end
+        startidx -= zeros_added;
+
+        // This operation kind of implicitly trims 2 elements on either end of `state`
+        //print_state(&state, startidx);
+        state = next_state(&state, &ruleset, &mut cache);
+        startidx += 2;
+        let zeros_skipped = trim_zeros(&mut state);
+        startidx += zeros_skipped;
+
+        //print_state(&state, startidx);
+        //println!("");
+
+        // Keep track of visited states to cycle check
+        equalibrium = state.clone();
+        if prior_states.contains_key(&state) {
+            //println!("Found a cycle at i: {}", i);
+            //println!("Zeros Skipped: {}", zeros_skipped);
+            equalibrium = state.clone();
+            last_iter = i as i64;
+            break;
+        } else {
+            prior_states.insert(state.clone(), zeros_skipped);
         }
+    }
 
-        #[test]
-        fn part2examples() {
-            let input = String::from(
-                "initial state: #..#.#..##......###...###
+    if part2 {
+        let iters_left: i64 = n_iter as i64 - (last_iter + 1);
+        startidx += iters_left;
+    }
 
-                ...## => #
-                ..#.. => #
-                .#... => #
-                .#.#. => #
-                .#.## => #
-                .##.. => #
-                .#### => #
-                #.#.# => #
-                #.### => #
-                ##.#. => #
-                ##.## => #
-                ###.. => #
-                ###.# => #
-                ####. => #",
-            );
-            assert_eq!(part2(&input), 1);
+    let num_ones: i64 = equalibrium.iter().map(|&x| x as i64).sum();
+
+    let mut output = 0;
+    for (i, &pot) in equalibrium.iter().enumerate() {
+        if pot == 1 {
+            output += i as i64;
         }
     }
+
+    output += num_ones * startidx;
+    output
+}
+
+pub fn print_state(state: &State, startidx: i64) {
+    for i in 0..5+startidx {
+        print!(" ");
+    }
+    for i in 0..state.len() {
+        if state[i] == 0 {
+            print!(".");
+        } else {
+            print!("#");
+        }
+    }
+    println!("");
+}
+
+#[aoc(day12, part1)]
+pub fn part1(input: &(State, RuleSet)) -> i64 {
+    solver(input, 20, false)
+}
+
+#[aoc(day12, part2)]
+pub fn part2(input: &(State, RuleSet)) -> i64 {
+    solver(input, 50000000000, true)
 }

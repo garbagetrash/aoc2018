@@ -130,13 +130,13 @@ mod test {
     #[test]
     fn part1example1() {
         let input = 18;
-        assert_eq!(part1(input), (33, 45));
+        assert_eq!(part1(&input), String::from("33,45"));
     }
 
     #[test]
     fn part1example2() {
         let input = 42;
-        assert_eq!(part1(input), (21, 61));
+        assert_eq!(part1(&input), String::from("21,61"));
     }
 
     /*
