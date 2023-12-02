@@ -1,9 +1,7 @@
 extern crate regex;
 
 use regex::Regex;
-use std::collections::{HashSet, HashMap};
-use std::fs::File;
-use std::io::Read;
+use std::collections::HashMap;
 
 type RuleSet = HashMap<[u8; 5], u8>;
 type State = Vec<u8>;
@@ -12,10 +10,9 @@ fn rule_lookup(state: &[u8], ruleset: &RuleSet) -> u8 {
     if state.len() == 5 {
         let _state: [u8; 5] = [state[0], state[1], state[2], state[3], state[4]];
         if let Some(output) = ruleset.get(&_state) {
-            return *output;
+            *output
         } else {
-            println!("_state: {:?}", _state);
-            panic!("");
+            panic!("RuleSet missing requested state");
         }
     } else {
         panic!("Can't call lookup on state length n != 5");
@@ -23,45 +20,42 @@ fn rule_lookup(state: &[u8], ruleset: &RuleSet) -> u8 {
 }
 
 fn next_state(state: &[u8], ruleset: &RuleSet, cache: &mut HashMap<Vec<u8>, Vec<u8>>) -> Vec<u8> {
-    let N = state.len();
-    //println!("N: {}", N);
+    let n = state.len();
+    //println!("n: {}", n);
 
     // First check cache (memoization)
-    match cache.get(state) {
-        Some(answer) => {
-            return answer.clone();
-        },
-        None => (),
+    if let Some(answer) = cache.get(state) {
+        return answer.clone();
     }
 
     // If not already in cache, then do the recursion stuff
     // Check base case
-    let mut output = vec![];
-    if N == 5 {
-        output = vec![rule_lookup(state, ruleset)];
-    } else if N > 5 {
-        let half_len = N / 2;
-        //println!("half_len: {}", half_len);
-        if half_len < 3 {
-            panic!("we're requiring that half_len >= 3");
-        }
-        if N - 3 < half_len - 2 {
-            panic!("we're requiring that N - 3 < half_len - 2");
-        }
+    let mut output;
+    match n {
+        5 => output = vec![rule_lookup(state, ruleset)],
+        6.. => {
+            let half_len = n / 2;
+            //println!("half_len: {}", half_len);
+            if half_len < 3 {
+                panic!("we're requiring that half_len >= 3");
+            }
+            if n - 3 < half_len - 2 {
+                panic!("we're requiring that n - 3 < half_len - 2");
+            }
 
-        // Divide the problem into 2 (carefully)
-        //let left = state[..half_len+2];
-        //let right = state[half_len-2..];
+            // Divide the problem into 2 (carefully)
+            //let left = state[..half_len+2];
+            //let right = state[half_len-2..];
 
-        // Recurse on left and right halves
-        output = next_state(&state[..half_len+2], ruleset, cache);
-        let mut right_output = next_state(&state[half_len-2..], ruleset, cache);
-        output.append(&mut right_output);
-    } else {
-        panic!("N < 5... we can't let this happen");
+            // Recurse on left and right halves
+            output = next_state(&state[..half_len + 2], ruleset, cache);
+            let mut right_output = next_state(&state[half_len - 2..], ruleset, cache);
+            output.append(&mut right_output);
+        }
+        _ => panic!("n < 5... we can't let this happen"),
     }
     cache.insert(state.to_vec(), output.clone());
-    return output;
+    output
 }
 
 #[aoc_generator(day12)]
@@ -114,22 +108,22 @@ fn add_zeros(state: &mut Vec<u8>) -> i64 {
     } else if state[3] == 1 {
         nzeros = 1;
     }
-    for j in 0..nzeros {
+    for _ in 0..nzeros {
         state.insert(0, 0);
     }
 
-    let N = state.len();
+    let n = state.len();
     let mut nzeros_ = 0;
-    if state[N - 1] == 1 {
+    if state[n - 1] == 1 {
         nzeros_ = 4;
-    } else if state[N - 2] == 1 {
+    } else if state[n - 2] == 1 {
         nzeros_ = 3;
-    } else if state[N - 3] == 1 {
+    } else if state[n - 3] == 1 {
         nzeros_ = 2;
-    } else if state[N - 4] == 1 {
+    } else if state[n - 4] == 1 {
         nzeros_ = 1;
     }
-    for j in 0..nzeros_ {
+    for _ in 0..nzeros_ {
         state.push(0);
     }
     nzeros
@@ -204,17 +198,17 @@ pub fn solver(input: &(State, RuleSet), n_iter: usize, part2: bool) -> i64 {
 }
 
 pub fn print_state(state: &State, startidx: i64) {
-    for i in 0..5+startidx {
+    for _ in 0..5 + startidx {
         print!(" ");
     }
-    for i in 0..state.len() {
-        if state[i] == 0 {
+    for &element in state {
+        if element == 0 {
             print!(".");
         } else {
             print!("#");
         }
     }
-    println!("");
+    println!();
 }
 
 #[aoc(day12, part1)]

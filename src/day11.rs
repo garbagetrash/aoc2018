@@ -1,7 +1,7 @@
 extern crate rayon;
 
-use scan_fmt::scan_fmt;
 use rayon::prelude::*;
+use scan_fmt::scan_fmt;
 
 pub fn power_level(x: i32, y: i32, serial_num: i32) -> i32 {
     let rack_id = x + 10;
@@ -18,9 +18,9 @@ pub fn power_level(x: i32, y: i32, serial_num: i32) -> i32 {
 
 pub fn construct_grid(serial_num: i32) -> [[i32; 300]; 300] {
     let mut grid = [[0i32; 300]; 300];
-    for x in 0..300 {
-        for y in 0..300 {
-            grid[x][y] = power_level(x as i32, y as i32, serial_num);
+    for (x, row) in grid.iter_mut().enumerate() {
+        for (y, element) in row.iter_mut().enumerate() {
+            *element = power_level(x as i32, y as i32, serial_num);
         }
     }
     grid
@@ -88,7 +88,7 @@ pub fn part2(input: &i32) -> String {
         }
     }
 
-    format!("{},{},{}", xmax, ymax, nmax as usize)
+    format!("{},{},{}", xmax, ymax, nmax)
 }
 
 #[cfg(test)]
